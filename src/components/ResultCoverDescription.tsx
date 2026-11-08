@@ -61,9 +61,9 @@ export const ResultCoverDescription: React.FC<ResultCoverDescriptionProps> = ({
                 </span>
               )}
               {customIntro?.enabled && (
-                <span className="px-2 py-0.5 text-[10px] font-bold text-blue-300 bg-blue-500/20 border border-blue-500/30 rounded-md flex items-center space-x-1" title={`Custom Intro: ${customIntro.atmosphere}`}>
+                <span className="px-2 py-0.5 text-[10px] font-bold text-blue-300 bg-blue-500/20 border border-blue-500/30 rounded-md flex items-center space-x-1" title={`Custom Intro: ${customIntro.autoInstruments ? 'AI Recommended Instruments' : customIntro.instruments.join(', ')} (${customIntro.atmosphere})`}>
                   <Music2 className="w-3 h-3 text-blue-400" />
-                  <span>Intro: {customIntro.atmosphere}</span>
+                  <span>Intro: {customIntro.autoInstruments ? 'AUTO AI' : `${customIntro.instruments.length} Inst`} ({customIntro.atmosphere})</span>
                 </span>
               )}
               {wasOptimized && (

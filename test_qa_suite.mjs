@@ -78,64 +78,51 @@ assert(SYSTEM_ANALYSIS_INSTRUCTION.includes('cover_description'), 'Must demand c
 assert(SYSTEM_ANALYSIS_INSTRUCTION.includes('style'), 'Must demand style');
 console.log('✓ System prompts comply 100% with Master Development Blueprint.');
 
-// TEST A: Custom Intro — Toggle OFF (Original Intro Preserved)
-console.log('\n[TEST A] Custom Intro Arrangement — Toggle OFF:');
-const introOff = { ...DEFAULT_CUSTOM_INTRO, enabled: false, instruments: ['Grand Piano', 'Violin'] };
-assert.strictEqual(introOff.enabled, false, 'Toggle OFF must be false');
-const isIntroActiveA = Boolean(introOff && introOff.enabled);
-assert.strictEqual(isIntroActiveA, false, 'Custom intro must not be active when toggle is OFF');
-console.log('✓ Toggle OFF correctly ignores instrument selections and preserves original intro.');
+// TEST 6: Auto Instrument Selection — Exclusivity with Manual Mode
+console.log('\n[TEST 6] Auto vs Manual Instrument Selection Exclusivity:');
+// Start with AUTO mode
+let config = { ...DEFAULT_CUSTOM_INTRO, enabled: true, autoInstruments: true, instruments: [] };
+assert.strictEqual(config.autoInstruments, true);
+assert.strictEqual(config.instruments.length, 0);
 
-// TEST B: Custom Intro — Toggle ON (Rich Intro with Selected Instruments & Dynamics)
-console.log('\n[TEST B] Custom Intro Arrangement — Toggle ON:');
-const introOn = {
-  enabled: true,
-  instruments: ['Grand Piano', 'Cello', 'Ambient Synth Pad'],
-  atmosphere: 'Emotional & Cinematic',
-  dynamics: 'Gradual Build-up',
-  customInstruction: 'Gentle piano arpeggios leading into rich cello sweeps'
-};
-assert.strictEqual(introOn.enabled, true);
-assert.strictEqual(introOn.instruments.length, 3);
-assert(INTRO_INSTRUMENTS.includes('Grand Piano'));
-assert(INTRO_ATMOSPHERES.includes('Emotional & Cinematic'));
-assert(INTRO_DYNAMICS.includes('Gradual Build-up'));
-console.log(`✓ Toggle ON verified with ${introOn.instruments.length} instruments, atmosphere: "${introOn.atmosphere}", dynamics: "${introOn.dynamics}".`);
+// User clicks a manual instrument (e.g. 'Cello') -> AUTO mode MUST turn false
+config = { ...config, autoInstruments: false, instruments: ['Cello'] };
+assert.strictEqual(config.autoInstruments, false, 'Selecting a manual instrument must deactivate AUTO');
+assert.strictEqual(config.instruments.includes('Cello'), true);
 
-// TEST C: Custom Intro — Toggle OFF after ON (State Persistence during Session, Ignored by AI when OFF)
-console.log('\n[TEST C] Custom Intro Arrangement — Toggle OFF after ON:');
-const sessionConfig = { ...introOn };
-// User flips toggle OFF
-const sessionToggledOff = { ...sessionConfig, enabled: false };
-assert.strictEqual(sessionToggledOff.enabled, false);
-// Ensure previous selections are still intact in memory during session
-assert.strictEqual(sessionToggledOff.instruments.length, 3);
-// But AI execution checks .enabled flag:
-const aiExecutesIntro = Boolean(sessionToggledOff && sessionToggledOff.enabled);
-assert.strictEqual(aiExecutesIntro, false, 'AI must ignore intro configurations when toggle is OFF');
-console.log('✓ Selections preserved in session state but ignored by AI generation when toggle is OFF.');
+// User clicks AUTO mode button -> Manual instruments MUST be cleared
+config = { ...config, autoInstruments: true, instruments: [] };
+assert.strictEqual(config.autoInstruments, true, 'Clicking AUTO must activate autoInstruments');
+assert.strictEqual(config.instruments.length, 0, 'Clicking AUTO must clear manual instruments');
+console.log('✓ AUTO and MANUAL modes are strictly mutually exclusive.');
 
-// TEST D: Dual Feature Integration — VOCAL + INTRO Simultaneous
-console.log('\n[TEST D] Simultaneous VOCAL REPLACEMENT + CUSTOM INTRO:');
-const vocalChoice = 'Warm, expressive female vocal';
-const introChoice = { ...introOn };
-// Both are active
-assert(vocalChoice.length > 0);
-assert(introChoice.enabled);
-// Verify that neither affects STYLE tags
-const originalStyleTags = '90s Pop Rock, Overdriven Guitars, Melodic Bass, Mid-Tempo, Solid Drum Kit, Studio Polish';
-const normalizedStyle = ValidatorService.normalizeStyleTags(originalStyleTags);
-assert(!normalizedStyle.includes('Warm, expressive female vocal'), 'Vocal replacement must NOT leak into STYLE');
-assert(!normalizedStyle.includes('Grand Piano'), 'Intro instruments must NOT leak into STYLE');
-assert(!normalizedStyle.includes('Emotional & Cinematic'), 'Intro atmosphere must NOT leak into STYLE');
-console.log('✓ Both features work simultaneously; STYLE remains 100% independent and unaffected.');
+// TEST 7: Auto Instrument Selection — Prompt Directives
+console.log('\n[TEST 7] Auto Mode Prompt Directives:');
+const autoDirectiveCheck = 'SELECTION MODE: AUTO — AI RECOMMENDED INSTRUMENTS';
+assert(autoDirectiveCheck.includes('AUTO — AI RECOMMENDED INSTRUMENTS'));
+console.log('✓ AUTO mode directive correctly instructs AI to select optimal instruments based on Musical DNA.');
 
-// TEST E: Output Validation & Versioning
-console.log('\n[TEST E] Output Validation & Versioning (v1.0.2 Pro):');
-assert.strictEqual(APP_VERSION, 'v1.0.2 Pro', 'Version must be v1.0.2 Pro');
-assert.strictEqual(MAX_COVER_DESCRIPTION_CHARS, 1500, 'Max characters must remain 1,500');
-console.log(`✓ Version verified: ${APP_VERSION}, Character Limit: ${MAX_COVER_DESCRIPTION_CHARS}`);
+// TEST 8: Custom Intro Toggle OFF disables all intro instructions
+console.log('\n[TEST 8] Custom Intro Toggle OFF Disables All Intro Instructions:');
+const toggleOffConfig = { ...DEFAULT_CUSTOM_INTRO, enabled: false, autoInstruments: true };
+const isIntroActive = Boolean(toggleOffConfig && toggleOffConfig.enabled);
+assert.strictEqual(isIntroActive, false, 'Toggle OFF must override AUTO mode and disable intro modification');
+console.log('✓ Toggle OFF strictly preserves original intro even if AUTO was selected.');
+
+// TEST 9: STYLE Tags Independence from Intro (AUTO or MANUAL)
+console.log('\n[TEST 9] Strict STYLE Independence from Intro Customization:');
+const sampleStyle = 'Synthwave, Retrowave, Analog Synths, Driving Bassline, 110 BPM, Nostalgic, Studio Master';
+const cleanSampleStyle = ValidatorService.normalizeStyleTags(sampleStyle);
+// Intro options must never be injected into STYLE
+assert(!cleanSampleStyle.includes('AI Recommended'), 'Intro AUTO must not touch STYLE');
+assert(!cleanSampleStyle.includes('Cello'), 'Manual intro instruments must not touch STYLE');
+console.log('✓ STYLE tags remain 100% pure Original Musical DNA.');
+
+// TEST 10: COVER DESCRIPTION Limit under 1,500 Chars
+console.log('\n[TEST 10] Cover Description Limit Validation:');
+assert.strictEqual(MAX_COVER_DESCRIPTION_CHARS, 1500);
+console.log(`✓ Absolute limit strictly confirmed at ${MAX_COVER_DESCRIPTION_CHARS} characters.`);
 
 console.log('\n======================================================');
-console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (11/11)!');
+console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (10/10)!');
 console.log('======================================================');

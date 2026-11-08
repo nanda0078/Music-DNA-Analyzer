@@ -10,6 +10,7 @@ export interface AudioMetadata {
 
 export interface CustomIntroConfig {
   enabled: boolean;
+  autoInstruments?: boolean;
   instruments: string[];
   atmosphere: string;
   dynamics: string;

@@ -38,6 +38,7 @@ export const INTRO_DYNAMICS = [
 
 export const DEFAULT_CUSTOM_INTRO: CustomIntroConfig = {
   enabled: false,
+  autoInstruments: false,
   instruments: [],
   atmosphere: 'Emotional & Cinematic',
   dynamics: 'Gradual Build-up',

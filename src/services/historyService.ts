@@ -77,7 +77,7 @@ Audio Reference : ${item.fileName}
 Tanggal Analisis : ${dateStr}
 AI Engine        : ${item.modelUsed}
 Vocal Character  : ${item.replacementVocal ? `Replacement (${item.replacementVocal})` : 'Original Vocal Preserved'}
-Custom Intro     : ${item.customIntro?.enabled ? `ON (${item.customIntro.atmosphere} | ${item.customIntro.instruments.join(', ') || 'Enriched'})` : 'OFF (Original Intro Preserved)'}
+Custom Intro     : ${item.customIntro?.enabled ? `ON (${item.customIntro.atmosphere} | ${item.customIntro.autoInstruments ? 'AUTO AI Recommended Instruments' : (item.customIntro.instruments.join(', ') || 'Enriched')})` : 'OFF (Original Intro Preserved)'}
 Panjang Karakter : ${item.charCount} / 1.500 Karakter
 Status Optimasi  : ${item.wasOptimized ? 'Teroptimasi Otomatis (<= 1.500)' : 'Lolos Validasi Langsung'}
 ===============================================================

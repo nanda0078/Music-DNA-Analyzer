@@ -17,12 +17,23 @@ export const CustomIntroPanel: React.FC<CustomIntroPanelProps> = ({
   disabled = false,
 }) => {
   const isEnabled = config.enabled;
+  const isAutoMode = Boolean(config.autoInstruments);
 
   const handleToggle = () => {
     if (disabled) return;
     onChange({
       ...config,
       enabled: !isEnabled,
+    });
+  };
+
+  const handleSelectAuto = () => {
+    if (!isEnabled || disabled) return;
+    // Activate AUTO mode and clear manual instruments
+    onChange({
+      ...config,
+      autoInstruments: true,
+      instruments: [],
     });
   };
 
@@ -34,8 +45,10 @@ export const CustomIntroPanel: React.FC<CustomIntroPanelProps> = ({
       ? current.filter(i => i !== instrument)
       : [...current, instrument];
 
+    // Selecting any manual instrument switches off AUTO mode
     onChange({
       ...config,
+      autoInstruments: false,
       instruments: updated,
     });
   };
@@ -121,38 +134,88 @@ export const CustomIntroPanel: React.FC<CustomIntroPanelProps> = ({
         !isEnabled ? 'opacity-40 pointer-events-none select-none grayscale-[40%]' : ''
       }`}>
         
-        {/* 1. Multiple Instrument Selection */}
+        {/* 1. Multiple Instrument Selection with AUTO Mode at Top */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
             <label className="font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
               <Layers className="w-3.5 h-3.5 text-blue-400" />
-              <span>Pilihan Instrumen Tambahan Intro (Multiple Select)</span>
+              <span>Pilihan Instrumen Tambahan Intro</span>
             </label>
-            <span className="font-mono text-blue-400 text-[11px]">
-              {config.instruments.length} Dipilih
+            {/* Active Mode Indicator */}
+            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border flex items-center space-x-1 ${
+              isAutoMode
+                ? 'bg-gradient-to-r from-blue-600/30 to-indigo-600/30 border-blue-400 text-blue-300 shadow-sm'
+                : config.instruments.length > 0
+                ? 'bg-studio-800 border-studio-700 text-slate-200'
+                : 'bg-studio-900 border-studio-800 text-slate-400'
+            }`}>
+              {isAutoMode ? (
+                <>
+                  <Sparkles className="w-3 h-3 text-cyan-400 animate-pulse" />
+                  <span>Mode: AUTO (AI Recommended)</span>
+                </>
+              ) : (
+                <span>Mode: MANUAL ({config.instruments.length} Dipilih)</span>
+              )}
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-studio-950/70 border border-studio-800/80">
-            {INTRO_INSTRUMENTS.map((inst) => {
-              const isSelected = config.instruments.includes(inst);
-              return (
-                <button
-                  key={inst}
-                  type="button"
-                  disabled={!isEnabled || disabled}
-                  onClick={() => handleInstrumentToggle(inst)}
-                  className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    isSelected
-                      ? 'bg-blue-600 text-white font-bold border border-blue-400 shadow-sm shadow-blue-600/30 scale-[1.02]'
-                      : 'bg-studio-850 hover:bg-studio-800 text-slate-300 hover:text-white border border-studio-750'
-                  }`}
-                >
-                  {isSelected && <Check className="w-3 h-3 text-white" />}
-                  <span>{inst}</span>
-                </button>
-              );
-            })}
+          <div className="p-3.5 rounded-xl bg-studio-950/70 border border-studio-800/80 space-y-2.5">
+            {/* Top: AUTO — AI Recommended Instruments */}
+            <button
+              type="button"
+              disabled={!isEnabled || disabled}
+              onClick={handleSelectAuto}
+              className={`w-full py-2.5 px-4 rounded-xl flex items-center justify-between text-xs font-bold transition-all ${
+                isAutoMode
+                  ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white border border-blue-400 studio-glow shadow-md shadow-blue-600/40'
+                  : 'bg-studio-850 hover:bg-studio-800 text-slate-300 hover:text-white border border-studio-700/80 hover:border-blue-500/40'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Sparkles className={`w-4 h-4 ${isAutoMode ? 'text-cyan-300 animate-pulse' : 'text-blue-400'}`} />
+                <span className="tracking-wide uppercase">AUTO — AI Recommended Instruments</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${
+                isAutoMode
+                  ? 'bg-white/20 border-white/40 text-white'
+                  : 'bg-studio-900 border-studio-750 text-slate-400'
+              }`}>
+                {isAutoMode ? 'AKTIF' : 'PILIH AUTO'}
+              </span>
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center space-x-2 pt-1 pb-0.5">
+              <div className="h-px bg-studio-800 flex-1" />
+              <span className="text-[10px] uppercase font-semibold text-slate-400">Atau Pilih Manual (Multiple Select)</span>
+              <div className="h-px bg-studio-800 flex-1" />
+            </div>
+
+            {/* Manual Instruments Pill Cloud */}
+            <div className="flex flex-wrap gap-1.5">
+              {INTRO_INSTRUMENTS.map((inst) => {
+                const isSelected = !isAutoMode && config.instruments.includes(inst);
+                return (
+                  <button
+                    key={inst}
+                    type="button"
+                    disabled={!isEnabled || disabled}
+                    onClick={() => handleInstrumentToggle(inst)}
+                    className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      isSelected
+                        ? 'bg-blue-600 text-white font-bold border border-blue-400 shadow-sm shadow-blue-600/30 scale-[1.02]'
+                        : isAutoMode
+                        ? 'bg-studio-900/60 text-slate-400 border border-studio-800 hover:border-studio-700 hover:text-slate-300'
+                        : 'bg-studio-850 hover:bg-studio-800 text-slate-300 hover:text-white border border-studio-750'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 text-white" />}
+                    <span>{inst}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
