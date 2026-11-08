@@ -19,6 +19,7 @@ export interface AnalysisResult {
   charCount: number;
   modelUsed: string;
   wasOptimized?: boolean;
+  replacementVocal?: string;
 }
 
 export interface ApiSettings {

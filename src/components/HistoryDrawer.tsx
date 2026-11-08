@@ -121,11 +121,17 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                       <h4 className="text-xs font-bold text-white truncate group-hover:text-blue-300 transition-colors">
                         {item.fileName}
                       </h4>
-                      <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-0.5">
+                      <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-0.5 flex-wrap">
                         <Calendar className="w-3 h-3 text-slate-500" />
                         <span>{dateStr}</span>
                         <span>•</span>
                         <span className="font-mono text-blue-400">{item.charCount} Karakter</span>
+                        {item.replacementVocal && (
+                          <>
+                            <span>•</span>
+                            <span className="text-indigo-400 font-medium">Vocal: {item.replacementVocal}</span>
+                          </>
+                        )}
                       </div>
                     </div>
 

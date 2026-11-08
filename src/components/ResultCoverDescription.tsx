@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Edit3, ShieldAlert, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
+import { Copy, Check, Edit3, ShieldAlert, CheckCircle2, Sparkles, AlertTriangle, Mic2 } from 'lucide-react';
 import { MAX_COVER_DESCRIPTION_CHARS } from '../constants';
 import { ValidatorService } from '../services/validatorService';
 
@@ -7,12 +7,14 @@ interface ResultCoverDescriptionProps {
   description: string;
   onChange: (newDescription: string) => void;
   wasOptimized?: boolean;
+  replacementVocal?: string;
 }
 
 export const ResultCoverDescription: React.FC<ResultCoverDescriptionProps> = ({
   description,
   onChange,
   wasOptimized = false,
+  replacementVocal,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -47,8 +49,14 @@ export const ResultCoverDescription: React.FC<ResultCoverDescriptionProps> = ({
             01
           </div>
           <div>
-            <h3 className="text-base font-extrabold uppercase tracking-wide text-white flex items-center space-x-2">
+            <h3 className="text-base font-extrabold uppercase tracking-wide text-white flex flex-wrap items-center gap-2">
               <span>COVER DESCRIPTION</span>
+              {replacementVocal && (
+                <span className="px-2 py-0.5 text-[10px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 rounded-md flex items-center space-x-1" title="Vocal Character Replacement Aktif">
+                  <Mic2 className="w-3 h-3 text-indigo-400" />
+                  <span>Vocal: {replacementVocal}</span>
+                </span>
+              )}
               {wasOptimized && (
                 <span className="px-2 py-0.5 text-[10px] font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 rounded-md flex items-center space-x-1">
                   <Sparkles className="w-3 h-3 text-cyan-400" />

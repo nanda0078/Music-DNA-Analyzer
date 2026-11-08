@@ -1,7 +1,7 @@
 import { ApiSettings } from './types';
 
 export const APP_NAME = "MUSIC DNA ANALYZER";
-export const APP_VERSION = "v1.0.0 Pro";
+export const APP_VERSION = "v1.0.1 Pro";
 
 export const AVAILABLE_MODELS = [
   { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Rekomendasi Utama — Model Terbaru & Cepat)', description: 'Model multimodal generasi terbaru dengan akurasi analitis audio tertinggi dan latency rendah.' },

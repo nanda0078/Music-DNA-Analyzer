@@ -13,6 +13,7 @@ import { ResultCoverDescription } from './components/ResultCoverDescription';
 import { ResultStyleTags } from './components/ResultStyleTags';
 import { SettingsModal } from './components/SettingsModal';
 import { HistoryDrawer } from './components/HistoryDrawer';
+import { VocalReplacementPanel } from './components/VocalReplacementPanel';
 
 export const App: React.FC = () => {
   // Settings & API state
@@ -26,6 +27,9 @@ export const App: React.FC = () => {
   const [audioMetadata, setAudioMetadata] = useState<AudioMetadata | null>(null);
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [base64Audio, setBase64Audio] = useState<string | null>(null);
+
+  // Vocal Replacement state (v1.0.1 Pro)
+  const [replacementVocal, setReplacementVocal] = useState<string>('');
 
   // Analysis progress & Results
   const [progress, setProgress] = useState<ProgressState>({
@@ -132,7 +136,8 @@ export const App: React.FC = () => {
             percentage: pct,
             message: stepMessage,
           }));
-        }
+        },
+        replacementVocal
       );
 
       setCurrentResult(result);
@@ -272,6 +277,14 @@ export const App: React.FC = () => {
               {/* Technical Metadata Card */}
               <AudioMetadataCard metadata={audioMetadata} />
 
+              {/* VOCAL CHARACTER REPLACEMENT (v1.0.1 Pro) */}
+              <VocalReplacementPanel
+                value={replacementVocal}
+                onChange={setReplacementVocal}
+                onReset={() => setReplacementVocal('')}
+                disabled={isProcessing}
+              />
+
               {/* Start Analysis Call To Action */}
               {!currentResult && progress.status !== 'analyzing' && progress.status !== 'optimizing' && (
                 <div className="flex flex-col sm:flex-row items-center justify-between p-6 rounded-2xl glass-card border border-blue-500/30 studio-glow gap-4">
@@ -330,6 +343,7 @@ export const App: React.FC = () => {
               description={currentResult.coverDescription}
               onChange={handleDescriptionChange}
               wasOptimized={currentResult.wasOptimized}
+              replacementVocal={currentResult.replacementVocal}
             />
 
             {/* PANEL 2: 02. STYLE */}
@@ -390,6 +404,11 @@ export const App: React.FC = () => {
         onClose={() => setIsHistoryOpen(false)}
         onSelectResult={(selected) => {
           setCurrentResult(selected);
+          if (selected.replacementVocal) {
+            setReplacementVocal(selected.replacementVocal);
+          } else {
+            setReplacementVocal('');
+          }
           setTimeout(() => {
             document.getElementById('final-results-anchor')?.scrollIntoView({ behavior: 'smooth' });
           }, 100);

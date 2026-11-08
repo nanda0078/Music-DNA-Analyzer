@@ -76,6 +76,7 @@ MUSIC DNA ANALYZER — AI MUSIC PROMPT BLUEPRINT
 Audio Reference : ${item.fileName}
 Tanggal Analisis : ${dateStr}
 AI Engine        : ${item.modelUsed}
+Vocal Character  : ${item.replacementVocal ? `Replacement (${item.replacementVocal})` : 'Original Vocal Preserved'}
 Panjang Karakter : ${item.charCount} / 1.500 Karakter
 Status Optimasi  : ${item.wasOptimized ? 'Teroptimasi Otomatis (<= 1.500)' : 'Lolos Validasi Langsung'}
 ===============================================================

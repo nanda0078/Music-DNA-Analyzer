@@ -110,12 +110,14 @@ export class GeminiService {
 
   /**
    * Analyze reference audio to extract Musical DNA and generate exactly TWO outputs
+   * Supports optional VOCAL CHARACTER REPLACEMENT (affects COVER DESCRIPTION only)
    */
   public static async analyzeAudio(
     base64Audio: string,
     mimeType: string,
     fileMeta: { fileName: string; fileSize: number; duration: number },
-    onProgress?: (step: string, percentage: number) => void
+    onProgress?: (step: string, percentage: number) => void,
+    replacementVocal?: string
   ): Promise<AnalysisResult> {
     const settings = this.getStoredSettings();
     if (!settings.apiKey) {
@@ -127,6 +129,11 @@ export class GeminiService {
       activeModel = 'gemini-3.8-flash';
     }
 
+    const hasVocalReplacement = Boolean(replacementVocal && replacementVocal.trim());
+    const vocalReplacementInstruction = hasVocalReplacement
+      ? `\n\n[MANDATORY FEATURE — VOCAL CHARACTER REPLACEMENT]\nThe user has explicitly requested a VOCAL CHARACTER REPLACEMENT for the cover track (Song B):\nTARGET REPLACEMENT VOCAL: "${replacementVocal!.trim()}"\n\nSTRICT CONDITIONAL EXECUTION RULES:\n1. IN "cover_description": Replace the original singer's vocal character, vocal timbre, gender presentation, and vocal delivery with this TARGET VOCAL CHARACTER ("${replacementVocal!.trim()}"). Seamlessly integrate this replacement vocal into the single cohesive cover description paragraph. DO NOT alter the original song's melody, lyrics, language, rhythm, tempo, instrumentation, chord progressions, arrangement builds, mood, or mix textures — ONLY replace the vocal character.\n2. IN "style": ABSOLUTELY DO NOT MODIFY STYLE TAGS BASED ON THIS VOCAL REPLACEMENT. "style" MUST REMAIN 100% FAITHFUL TO THE ORIGINAL REFERENCE AUDIO'S MUSICAL DNA (original genre, original mood, original instrumentation, original tempo, original mix quality). STYLE MUST REMAIN STRICTLY INDEPENDENT FROM VOCAL CHARACTER REPLACEMENT.`
+      : `\n\n[VOCAL CHARACTER HANDLING]\nNo replacement vocal character specified. Preserve and describe the original singer's vocal character exactly as detected in the audio.`;
+
     onProgress?.('Mengirim audio referensi ke Gemini AI...', 30);
 
     const requestBody = {
@@ -135,7 +142,7 @@ export class GeminiService {
           role: 'user',
           parts: [
             {
-              text: `${SYSTEM_ANALYSIS_INSTRUCTION}\n\n[FILE METADATA]\nFilename: ${fileMeta.fileName}\nDuration: ${Math.round(fileMeta.duration)} seconds\nMIME: ${mimeType}\n\nBegin deep audio listening and output the JSON blueprint now:`
+              text: `${SYSTEM_ANALYSIS_INSTRUCTION}${vocalReplacementInstruction}\n\n[FILE METADATA]\nFilename: ${fileMeta.fileName}\nDuration: ${Math.round(fileMeta.duration)} seconds\nMIME: ${mimeType}\n\nBegin deep audio listening and output the JSON blueprint now:`
             },
             {
               inlineData: {
@@ -237,7 +244,7 @@ export class GeminiService {
       onProgress?.(`Memadatkan COVER DESCRIPTION (${charCount} > 1.500 karakter)... Upaya ke-${attempts}`, 85 + (attempts * 4));
       wasOptimized = true;
 
-      finalDescription = await this.optimizeDescription(finalDescription, settings);
+      finalDescription = await this.optimizeDescription(finalDescription, settings, replacementVocal);
       finalDescription = ValidatorService.normalizeCoverDescription(finalDescription);
       charCount = ValidatorService.countCharacters(finalDescription);
     }
@@ -266,23 +273,28 @@ export class GeminiService {
       style: cleanStyle,
       charCount,
       modelUsed: activeModel,
-      wasOptimized
+      wasOptimized,
+      replacementVocal: hasVocalReplacement ? replacementVocal!.trim() : undefined,
     };
   }
 
   /**
    * Re-synthesize and compress COVER DESCRIPTION to guarantee <= 1500 chars
    */
-  private static async optimizeDescription(text: string, settings: ApiSettings): Promise<string> {
+  private static async optimizeDescription(text: string, settings: ApiSettings, replacementVocal?: string): Promise<string> {
     const targetModel = settings.modelId === 'gemini-2.5-flash' ? 'gemini-3.8-flash' : (settings.modelId || 'gemini-3.8-flash');
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${settings.apiKey.trim()}`;
+    const vocalNote = replacementVocal && replacementVocal.trim()
+      ? `\nNote: Ensure the target replacement vocal character ("${replacementVocal.trim()}") remains explicitly intact.`
+      : '';
+
     const payload = {
       contents: [
         {
           role: 'user',
           parts: [
             {
-              text: `${SYSTEM_OPTIMIZATION_INSTRUCTION}\n\nORIGINAL COVER DESCRIPTION TO CONDENSE:\n${text}`
+              text: `${SYSTEM_OPTIMIZATION_INSTRUCTION}${vocalNote}\n\nORIGINAL COVER DESCRIPTION TO CONDENSE:\n${text}`
             }
           ]
         }
