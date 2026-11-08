@@ -1,7 +1,48 @@
-import { ApiSettings } from './types';
+import { ApiSettings, CustomIntroConfig } from './types';
 
 export const APP_NAME = "MUSIC DNA ANALYZER";
-export const APP_VERSION = "v1.0.1 Pro";
+export const APP_VERSION = "v1.0.2 Pro";
+
+export const INTRO_INSTRUMENTS = [
+  'Grand Piano',
+  'Acoustic Guitar',
+  'Clean Electric Guitar',
+  'Violin',
+  'Cello',
+  'Orchestral Strings',
+  'Ambient Synth Pad',
+  'Flute',
+  'Saxophone',
+  'Cinematic Percussion',
+  'Soft Drums',
+  'Harp',
+] as const;
+
+export const INTRO_ATMOSPHERES = [
+  'Emotional & Cinematic',
+  'Romantic & Gentle',
+  'Atmospheric & Dreamy',
+  'Dramatic & Powerful',
+  'Acoustic & Intimate',
+  'Epic & Orchestral',
+  'Elegant & Melodic',
+  'Warm & Nostalgic',
+] as const;
+
+export const INTRO_DYNAMICS = [
+  'Soft & Intimate',
+  'Gradual Build-up',
+  'Moderate & Expressive',
+  'Powerful & Dramatic',
+] as const;
+
+export const DEFAULT_CUSTOM_INTRO: CustomIntroConfig = {
+  enabled: false,
+  instruments: [],
+  atmosphere: 'Emotional & Cinematic',
+  dynamics: 'Gradual Build-up',
+  customInstruction: '',
+};
 
 export const AVAILABLE_MODELS = [
   { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Rekomendasi Utama — Model Terbaru & Cepat)', description: 'Model multimodal generasi terbaru dengan akurasi analitis audio tertinggi dan latency rendah.' },

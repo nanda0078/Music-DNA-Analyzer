@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Copy, Check, Edit3, ShieldAlert, CheckCircle2, Sparkles, AlertTriangle, Mic2 } from 'lucide-react';
+import { Copy, Check, Edit3, ShieldAlert, CheckCircle2, Sparkles, AlertTriangle, Mic2, Music2 } from 'lucide-react';
 import { MAX_COVER_DESCRIPTION_CHARS } from '../constants';
 import { ValidatorService } from '../services/validatorService';
+import { CustomIntroConfig } from '../types';
 
 interface ResultCoverDescriptionProps {
   description: string;
   onChange: (newDescription: string) => void;
   wasOptimized?: boolean;
   replacementVocal?: string;
+  customIntro?: CustomIntroConfig;
 }
 
 export const ResultCoverDescription: React.FC<ResultCoverDescriptionProps> = ({
@@ -15,6 +17,7 @@ export const ResultCoverDescription: React.FC<ResultCoverDescriptionProps> = ({
   onChange,
   wasOptimized = false,
   replacementVocal,
+  customIntro,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -55,6 +58,12 @@ export const ResultCoverDescription: React.FC<ResultCoverDescriptionProps> = ({
                 <span className="px-2 py-0.5 text-[10px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 rounded-md flex items-center space-x-1" title="Vocal Character Replacement Aktif">
                   <Mic2 className="w-3 h-3 text-indigo-400" />
                   <span>Vocal: {replacementVocal}</span>
+                </span>
+              )}
+              {customIntro?.enabled && (
+                <span className="px-2 py-0.5 text-[10px] font-bold text-blue-300 bg-blue-500/20 border border-blue-500/30 rounded-md flex items-center space-x-1" title={`Custom Intro: ${customIntro.atmosphere}`}>
+                  <Music2 className="w-3 h-3 text-blue-400" />
+                  <span>Intro: {customIntro.atmosphere}</span>
                 </span>
               )}
               {wasOptimized && (

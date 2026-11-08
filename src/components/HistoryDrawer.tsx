@@ -132,6 +132,12 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                             <span className="text-indigo-400 font-medium">Vocal: {item.replacementVocal}</span>
                           </>
                         )}
+                        {item.customIntro?.enabled && (
+                          <>
+                            <span>•</span>
+                            <span className="text-blue-400 font-medium">Intro: ON</span>
+                          </>
+                        )}
                       </div>
                     </div>
 

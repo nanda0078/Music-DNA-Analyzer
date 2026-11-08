@@ -8,6 +8,14 @@ export interface AudioMetadata {
   dataUrl?: string; // for HTML5 audio element
 }
 
+export interface CustomIntroConfig {
+  enabled: boolean;
+  instruments: string[];
+  atmosphere: string;
+  dynamics: string;
+  customInstruction?: string;
+}
+
 export interface AnalysisResult {
   id: string;
   timestamp: number;
@@ -20,6 +28,7 @@ export interface AnalysisResult {
   modelUsed: string;
   wasOptimized?: boolean;
   replacementVocal?: string;
+  customIntro?: CustomIntroConfig;
 }
 
 export interface ApiSettings {

@@ -1,4 +1,4 @@
-import { ApiSettings, AnalysisResult } from '../types';
+import { ApiSettings, AnalysisResult, CustomIntroConfig } from '../types';
 import { 
   DEFAULT_SETTINGS, 
   MAX_COVER_DESCRIPTION_CHARS, 
@@ -110,14 +110,15 @@ export class GeminiService {
 
   /**
    * Analyze reference audio to extract Musical DNA and generate exactly TWO outputs
-   * Supports optional VOCAL CHARACTER REPLACEMENT (affects COVER DESCRIPTION only)
+   * Supports optional VOCAL CHARACTER REPLACEMENT and CUSTOM INTRO ARRANGEMENT (affects COVER DESCRIPTION only)
    */
   public static async analyzeAudio(
     base64Audio: string,
     mimeType: string,
     fileMeta: { fileName: string; fileSize: number; duration: number },
     onProgress?: (step: string, percentage: number) => void,
-    replacementVocal?: string
+    replacementVocal?: string,
+    customIntro?: CustomIntroConfig
   ): Promise<AnalysisResult> {
     const settings = this.getStoredSettings();
     if (!settings.apiKey) {
@@ -129,10 +130,26 @@ export class GeminiService {
       activeModel = 'gemini-3.8-flash';
     }
 
+    // 1. Vocal Replacement Instruction
     const hasVocalReplacement = Boolean(replacementVocal && replacementVocal.trim());
     const vocalReplacementInstruction = hasVocalReplacement
       ? `\n\n[MANDATORY FEATURE — VOCAL CHARACTER REPLACEMENT]\nThe user has explicitly requested a VOCAL CHARACTER REPLACEMENT for the cover track (Song B):\nTARGET REPLACEMENT VOCAL: "${replacementVocal!.trim()}"\n\nSTRICT CONDITIONAL EXECUTION RULES:\n1. IN "cover_description": Replace the original singer's vocal character, vocal timbre, gender presentation, and vocal delivery with this TARGET VOCAL CHARACTER ("${replacementVocal!.trim()}"). Seamlessly integrate this replacement vocal into the single cohesive cover description paragraph. DO NOT alter the original song's melody, lyrics, language, rhythm, tempo, instrumentation, chord progressions, arrangement builds, mood, or mix textures — ONLY replace the vocal character.\n2. IN "style": ABSOLUTELY DO NOT MODIFY STYLE TAGS BASED ON THIS VOCAL REPLACEMENT. "style" MUST REMAIN 100% FAITHFUL TO THE ORIGINAL REFERENCE AUDIO'S MUSICAL DNA (original genre, original mood, original instrumentation, original tempo, original mix quality). STYLE MUST REMAIN STRICTLY INDEPENDENT FROM VOCAL CHARACTER REPLACEMENT.`
       : `\n\n[VOCAL CHARACTER HANDLING]\nNo replacement vocal character specified. Preserve and describe the original singer's vocal character exactly as detected in the audio.`;
+
+    // 2. Custom Intro Arrangement Instruction (Toggle ON/OFF)
+    const isCustomIntroEnabled = Boolean(customIntro && customIntro.enabled);
+    let customIntroInstruction = `\n\n[INTRO ARRANGEMENT HANDLING]\nCustom Intro Arrangement is DISABLED (OFF). Preserve and describe the original intro structure and instrumentation exactly as audibly present in the reference audio.`;
+
+    if (isCustomIntroEnabled && customIntro) {
+      const selectedInstruments = customIntro.instruments && customIntro.instruments.length > 0
+        ? customIntro.instruments.join(', ')
+        : 'rich acoustic and orchestral instruments';
+      const customNotes = customIntro.customInstruction?.trim()
+        ? ` Additional custom intro instruction: "${customIntro.customInstruction.trim()}".`
+        : '';
+
+      customIntroInstruction = `\n\n[MANDATORY FEATURE — CUSTOM INTRO ARRANGEMENT (TOGGLE IS ON)]\nThe user has activated a custom, creative, and musically richer intro arrangement for the cover track (Song B):\n- Target Intro Instruments: ${selectedInstruments}\n- Intro Atmosphere: ${customIntro.atmosphere}\n- Intro Dynamics: ${customIntro.dynamics}${customNotes}\n\nSTRICT CONDITIONAL EXECUTION RULES FOR CUSTOM INTRO:\n1. IN "cover_description": Design a musically richer, more captivating, and emotionally elevated instrumental intro arrangement that opens the song before the first verse. Seamlessly weave the chosen instruments (${selectedInstruments}) into an atmosphere of "${customIntro.atmosphere}" with a dynamic curve of "${customIntro.dynamics}". Formulate a smooth, natural musical transition leading seamlessly from this creative intro directly into the song's original first verse.\n2. STRICT ORIGINAL SONG PRESERVATION: This customization applies EXCLUSIVELY to the INTRO section. After the creative intro finishes, the song MUST return 100% faithfully to the original composition: preserve the original melody, original lyrics and language, original tempo and groove, original chord progressions, original genre identity, and original arrangements of Verse, Chorus, Bridge, Interlude, and Outro. DO NOT rearrange or alter any other section of the song!\n3. IN "style": ABSOLUTELY DO NOT MODIFY STYLE TAGS BASED ON THE CUSTOM INTRO ARRANGEMENT. "style" MUST REMAIN 100% FAITHFUL TO THE ORIGINAL REFERENCE AUDIO'S MUSICAL DNA. DO NOT add or alter tags based on the custom intro instruments or atmosphere. STYLE MUST REMAIN STRICTLY INDEPENDENT!`;
+    }
 
     onProgress?.('Mengirim audio referensi ke Gemini AI...', 30);
 
@@ -142,7 +159,7 @@ export class GeminiService {
           role: 'user',
           parts: [
             {
-              text: `${SYSTEM_ANALYSIS_INSTRUCTION}${vocalReplacementInstruction}\n\n[FILE METADATA]\nFilename: ${fileMeta.fileName}\nDuration: ${Math.round(fileMeta.duration)} seconds\nMIME: ${mimeType}\n\nBegin deep audio listening and output the JSON blueprint now:`
+              text: `${SYSTEM_ANALYSIS_INSTRUCTION}${vocalReplacementInstruction}${customIntroInstruction}\n\n[FILE METADATA]\nFilename: ${fileMeta.fileName}\nDuration: ${Math.round(fileMeta.duration)} seconds\nMIME: ${mimeType}\n\nBegin deep audio listening and output the JSON blueprint now:`
             },
             {
               inlineData: {
@@ -244,7 +261,7 @@ export class GeminiService {
       onProgress?.(`Memadatkan COVER DESCRIPTION (${charCount} > 1.500 karakter)... Upaya ke-${attempts}`, 85 + (attempts * 4));
       wasOptimized = true;
 
-      finalDescription = await this.optimizeDescription(finalDescription, settings, replacementVocal);
+      finalDescription = await this.optimizeDescription(finalDescription, settings, replacementVocal, customIntro);
       finalDescription = ValidatorService.normalizeCoverDescription(finalDescription);
       charCount = ValidatorService.countCharacters(finalDescription);
     }
@@ -275,18 +292,28 @@ export class GeminiService {
       modelUsed: activeModel,
       wasOptimized,
       replacementVocal: hasVocalReplacement ? replacementVocal!.trim() : undefined,
+      customIntro: isCustomIntroEnabled ? customIntro : undefined,
     };
   }
 
   /**
    * Re-synthesize and compress COVER DESCRIPTION to guarantee <= 1500 chars
    */
-  private static async optimizeDescription(text: string, settings: ApiSettings, replacementVocal?: string): Promise<string> {
+  private static async optimizeDescription(
+    text: string, 
+    settings: ApiSettings, 
+    replacementVocal?: string,
+    customIntro?: CustomIntroConfig
+  ): Promise<string> {
     const targetModel = settings.modelId === 'gemini-2.5-flash' ? 'gemini-3.8-flash' : (settings.modelId || 'gemini-3.8-flash');
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${settings.apiKey.trim()}`;
-    const vocalNote = replacementVocal && replacementVocal.trim()
-      ? `\nNote: Ensure the target replacement vocal character ("${replacementVocal.trim()}") remains explicitly intact.`
-      : '';
+    let notes = '';
+    if (replacementVocal && replacementVocal.trim()) {
+      notes += `\nNote: Ensure the target replacement vocal character ("${replacementVocal.trim()}") remains explicitly intact.`;
+    }
+    if (customIntro && customIntro.enabled) {
+      notes += `\nNote: Ensure the custom intro arrangement elements (${customIntro.atmosphere}, ${customIntro.instruments.slice(0, 3).join(', ')}) and its smooth transition into the original song are preserved.`;
+    }
 
     const payload = {
       contents: [
@@ -294,7 +321,7 @@ export class GeminiService {
           role: 'user',
           parts: [
             {
-              text: `${SYSTEM_OPTIMIZATION_INSTRUCTION}${vocalNote}\n\nORIGINAL COVER DESCRIPTION TO CONDENSE:\n${text}`
+              text: `${SYSTEM_OPTIMIZATION_INSTRUCTION}${notes}\n\nORIGINAL COVER DESCRIPTION TO CONDENSE:\n${text}`
             }
           ]
         }

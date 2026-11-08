@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Music, Play, AlertCircle, ArrowRight, ShieldCheck, Disc3 } from 'lucide-react';
-import { AudioMetadata, AnalysisResult, ProgressState, ApiSettings } from './types';
+import { AudioMetadata, AnalysisResult, ProgressState, ApiSettings, CustomIntroConfig } from './types';
+import { DEFAULT_CUSTOM_INTRO } from './constants';
 import { AudioProcessor } from './services/audioProcessor';
 import { GeminiService } from './services/geminiService';
 import { HistoryService } from './services/historyService';
@@ -14,6 +15,7 @@ import { ResultStyleTags } from './components/ResultStyleTags';
 import { SettingsModal } from './components/SettingsModal';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { VocalReplacementPanel } from './components/VocalReplacementPanel';
+import { CustomIntroPanel } from './components/CustomIntroPanel';
 
 export const App: React.FC = () => {
   // Settings & API state
@@ -28,8 +30,9 @@ export const App: React.FC = () => {
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [base64Audio, setBase64Audio] = useState<string | null>(null);
 
-  // Vocal Replacement state (v1.0.1 Pro)
+  // Creative Cover Settings state (v1.0.1 & v1.0.2 Pro)
   const [replacementVocal, setReplacementVocal] = useState<string>('');
+  const [customIntro, setCustomIntro] = useState<CustomIntroConfig>(DEFAULT_CUSTOM_INTRO);
 
   // Analysis progress & Results
   const [progress, setProgress] = useState<ProgressState>({
@@ -94,6 +97,8 @@ export const App: React.FC = () => {
     setAudioMetadata(null);
     setWaveformPeaks([]);
     setBase64Audio(null);
+    setReplacementVocal('');
+    setCustomIntro(DEFAULT_CUSTOM_INTRO);
     setCurrentResult(null);
     setProgress({ status: 'idle', percentage: 0, message: '' });
   };
@@ -137,7 +142,8 @@ export const App: React.FC = () => {
             message: stepMessage,
           }));
         },
-        replacementVocal
+        replacementVocal,
+        customIntro
       );
 
       setCurrentResult(result);
@@ -277,13 +283,29 @@ export const App: React.FC = () => {
               {/* Technical Metadata Card */}
               <AudioMetadataCard metadata={audioMetadata} />
 
-              {/* VOCAL CHARACTER REPLACEMENT (v1.0.1 Pro) */}
-              <VocalReplacementPanel
-                value={replacementVocal}
-                onChange={setReplacementVocal}
-                onReset={() => setReplacementVocal('')}
-                disabled={isProcessing}
-              />
+              {/* PENGATURAN KREATIF COVER */}
+              <div className="space-y-4 pt-1">
+                <div className="flex items-center space-x-2 text-xs font-bold text-slate-300 uppercase tracking-wider px-1">
+                  <Sparkles className="w-4 h-4 text-blue-400" />
+                  <span>PENGATURAN KREATIF COVER</span>
+                </div>
+
+                {/* VOCAL CHARACTER REPLACEMENT */}
+                <VocalReplacementPanel
+                  value={replacementVocal}
+                  onChange={setReplacementVocal}
+                  onReset={() => setReplacementVocal('')}
+                  disabled={isProcessing}
+                />
+
+                {/* CUSTOM INTRO ARRANGEMENT (v1.0.2 Pro) */}
+                <CustomIntroPanel
+                  config={customIntro}
+                  onChange={setCustomIntro}
+                  onReset={() => setCustomIntro({ ...DEFAULT_CUSTOM_INTRO, enabled: customIntro.enabled })}
+                  disabled={isProcessing}
+                />
+              </div>
 
               {/* Start Analysis Call To Action */}
               {!currentResult && progress.status !== 'analyzing' && progress.status !== 'optimizing' && (
@@ -344,6 +366,7 @@ export const App: React.FC = () => {
               onChange={handleDescriptionChange}
               wasOptimized={currentResult.wasOptimized}
               replacementVocal={currentResult.replacementVocal}
+              customIntro={currentResult.customIntro}
             />
 
             {/* PANEL 2: 02. STYLE */}
@@ -408,6 +431,11 @@ export const App: React.FC = () => {
             setReplacementVocal(selected.replacementVocal);
           } else {
             setReplacementVocal('');
+          }
+          if (selected.customIntro) {
+            setCustomIntro(selected.customIntro);
+          } else {
+            setCustomIntro(DEFAULT_CUSTOM_INTRO);
           }
           setTimeout(() => {
             document.getElementById('final-results-anchor')?.scrollIntoView({ behavior: 'smooth' });

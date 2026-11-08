@@ -1,25 +1,41 @@
-# 🎵 MUSIC DNA ANALYZER v1.0.1 Pro
+# 🎵 MUSIC DNA ANALYZER v1.0.2 Pro
 ### Professional Reference Audio Analysis & AI Music Prompt Generator (Suno v3.5/v4 & Udio Expert)
 
 Aplikasi studio profesional untuk menganalisis audio lagu referensi (*Song A*), mengekstrak identitas sonik & *Musical DNA* aslinya, serta menghasilkan prompt AI musik dengan **tepat dua output final** tanpa laporan berlebihan.
 
 ---
 
-## ✨ Fitur Baru di v1.0.1 Pro: VOCAL CHARACTER REPLACEMENT
+## ✨ Fitur Baru di v1.0.2 Pro: CUSTOM INTRO ARRANGEMENT (dengan Toggle ON/OFF)
 
-Fitur **VOCAL CHARACTER REPLACEMENT** memungkinkan pengguna menentukan karakter suara penyanyi pengganti untuk lagu cover (*Song B*):
-- **Change the Singer's Vocal Character, Not the Original Song**:
-  Hanya mengubah karakter suara penyanyi pengganti tanpa merusak atau mengubah melodi, instrumen, progresi akor, tempo, genre, dan aransemen lagu asli.
-- **Kondisi Input**:
-  - *Kolom Kosong (Default)*: Mempertahankan karakter vokal penyanyi asli berdasarkan hasil deteksi audio.
-  - *Kolom Terisi*: Mengganti karakter vokal asli dengan target suara pilihan pengguna (misal: *Male to Female*, *Male Tenor to Female Alto*, *Aggressive High-Energy Female Vocal*, *Smooth Velvety Male Tenor*).
-- **Aturan Pembagian Tanggung Jawab Output Mutlak**:
-  - **`01. COVER DESCRIPTION`**: Satu-satunya output yang menerima instruksi karakter vokal pengganti.
-  - **`02. STYLE`**: Tetap 100% independen dan mencerminkan *Original Musical DNA* lagu referensi tanpa terpengaruh oleh input karakter vokal pengganti.
+Fitur **CUSTOM INTRO ARRANGEMENT** memungkinkan pengguna merancang intro lagu cover yang lebih menarik, lebih kaya instrumen, lebih emosional, dan lebih kreatif sebelum masuk secara alami ke lagu asli:
+- **Toggle ON/OFF**:
+  - **OFF (Default)**: Custom intro dinonaktifkan. Seluruh kontrol ter-disable secara visual dan fungsional. Intro original dipertahankan murni dari hasil analisis audio referensi.
+  - **ON**: Mengaktifkan kustomisasi intro instrumen, atmosfer, dan dinamika.
+  - **Session State Persistence**: Pengaturan instrumen dan opsi intro tetap tersimpan di memori sesi saat toggle diubah dari ON ke OFF, dan langsung dipulihkan ketika diaktifkan kembali.
+- **Pilihan Instrumen Tambahan (Multiple Select)**:
+  Grand Piano, Acoustic Guitar, Clean Electric Guitar, Violin, Cello, Orchestral Strings, Ambient Synth Pad, Flute, Saxophone, Cinematic Percussion, Soft Drums, Harp.
+- **Pilihan Intro Atmosphere**:
+  Emotional & Cinematic, Romantic & Gentle, Atmospheric & Dreamy, Dramatic & Powerful, Acoustic & Intimate, Epic & Orchestral, Elegant & Melodic, Warm & Nostalgic.
+- **Pilihan Intro Dynamics**:
+  Soft & Intimate, Gradual Build-up, Moderate & Expressive, Powerful & Dramatic.
+- **Instruksi Kustom Tambahan (Opsional)**:
+  Catatan narasi aransemen intro spesifik pengguna.
+- **Strict Original Song Preservation**:
+  Kustomisasi hanya berlaku eksklusif pada bagian INTRO. Begitu intro selesai, lagu **wajib kembali 100% ke aransemen utama lagu asli** (melodi asli, lirik, bahasa, tempo, groove, progresi akor, Verse, Chorus, Bridge, Interlude, dan Outro tidak diubah).
+- **Pembagian Tanggung Jawab Output Mutlak**:
+  - **`01. COVER DESCRIPTION`**: Menerima aransemen intro kreatif beserta transisi alaminya menuju lagu asli ($\le$ 1.500 karakter).
+  - **`02. STYLE`**: **TETAP 100% INDEPENDEN**. Tidak terpengaruh atau tercemar oleh instrumen/tag dari intro tambahan.
 
 ---
 
-## 🎧 Seluruh Fitur Utama
+## 🎤 Fitur v1.0.1 Pro: VOCAL CHARACTER REPLACEMENT
+- Memungkinkan penggantian karakter vokal penyanyi (*Male to Female*, *Female to Male*, *Tenor to Alto*, dll.) tanpa mengubah melodi atau aransemen asli lagu.
+- Terletak bersama di dalam wadah: **PENGATURAN KREATIF COVER**.
+- Hanya memengaruhi output `01. COVER DESCRIPTION`. Output `02. STYLE` tetap murni.
+
+---
+
+## 🎧 Seluruh Fitur Standar
 
 ### 1. Audio Processing & Waveform Visualization
 - **Multi-Format Audio Upload**: Mendukung MP3, WAV, OGG, M4A, FLAC, dan AAC (drag-and-drop & browse).
@@ -30,15 +46,15 @@ Fitur **VOCAL CHARACTER REPLACEMENT** memungkinkan pengguna menentukan karakter 
 
 ### 2. Internal 9-Dimensional Musical Intelligence (Gemini AI)
 Analisis dilakukan mendalam secara internal tanpa membocorkan laporan parsial:
-1. *Genre & Style Intelligence* (Genre utama, subgenre, pengaruh musikal dominan)
-2. *Mood & Emotional Intelligence* (Atmosfer emosional, perkembangan suasana)
-3. *Instrumentation Intelligence* (Instrumen utama, ritmis, teknik bermain, akustik vs elektrik/sintetis)
-4. *Arrangement Intelligence* (Dinamika intro, verse, chorus build-up, transisi antar bagian)
-5. *Vocal Intelligence* (Presentasi gender vokal, timbre, artikulasi, dynamic delivery, backing harmony)
-6. *Rhythm & Tempo Intelligence* (Groove feel, estimasi BPM, pola ketukan drum)
-7. *Harmonic & Melodic Intelligence* (Tonality, phrasing melodi, pergerakan akor)
-8. *Mixing & Production Intelligence* (Lebar stereo, kedalaman spasial, reverb/ambience, tekstur mixing)
-9. *Dynamic Intelligence* (Kontras energi antar seksi, build-up, breakdown)
+1. *Genre & Style Intelligence*
+2. *Mood & Emotional Intelligence*
+3. *Instrumentation Intelligence*
+4. *Arrangement Intelligence*
+5. *Vocal Intelligence*
+6. *Rhythm & Tempo Intelligence*
+7. *Harmonic & Melodic Intelligence*
+8. *Mixing & Production Intelligence*
+9. *Dynamic Intelligence*
 
 ### 3. Tepat DUA Output Final (Strict Specification)
 - **`01. COVER DESCRIPTION`**: Satu paragraf padu bahasa Inggris yang mengintegrasikan 5 pilar musikal (maksimal 1.500 karakter).
