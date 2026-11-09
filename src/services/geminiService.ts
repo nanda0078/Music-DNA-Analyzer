@@ -18,10 +18,10 @@ export class GeminiService {
       const saved = localStorage.getItem(SETTINGS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Automatically migrate deprecated gemini-2.5-flash to gemini-3.8-flash
+        // Automatically migrate deprecated gemini-2.5-flash to gemini-2.0-flash
         let activeModel = parsed.modelId || DEFAULT_SETTINGS.modelId;
         if (activeModel === 'gemini-2.5-flash') {
-          activeModel = 'gemini-3.8-flash';
+          activeModel = 'gemini-2.0-flash';
         }
         return {
           apiKey: parsed.apiKey || '',
@@ -87,10 +87,13 @@ export class GeminiService {
           return { success: false, message: 'Akses ditolak (403). Pastikan Gemini API aktif di proyek Google Cloud Anda.' };
         }
         if (response.status === 404) {
-          return { success: false, message: `Model "${modelId}" tidak ditemukan atau tidak tersedia untuk akun ini.` };
+          return { success: false, message: `Model "${modelId}" tidak ditemukan atau tidak tersedia untuk akun ini. Disarankan menggunakan "Gemini 2.0 Flash" atau "Gemini 1.5 Flash".` };
         }
         if (response.status === 429) {
           return { success: false, message: 'Batas kuota API tercapai (Rate Limit / Quota Exceeded). Silakan coba lagi nanti.' };
+        }
+        if (response.status === 503) {
+          return { success: false, message: `Model "${modelId}" sedang mengalami antrean/lonjakan beban di server Google (503 High Demand). Sistem akan otomatis menggunakan model cadangan saat analisis.` };
         }
         return { success: false, message: `Koneksi gagal (${response.status}): ${errorMsg}` };
       }
@@ -125,9 +128,9 @@ export class GeminiService {
       throw new Error('Kunci Gemini API belum diatur. Silakan buka menu "API & PENGATURAN" untuk memasukkan API Key Anda.');
     }
 
-    let activeModel = settings.modelId || 'gemini-3.8-flash';
+    let activeModel = settings.modelId || 'gemini-2.0-flash';
     if (activeModel === 'gemini-2.5-flash') {
-      activeModel = 'gemini-3.8-flash';
+      activeModel = 'gemini-2.0-flash';
     }
 
     // 1. Vocal Replacement Instruction
@@ -186,21 +189,38 @@ export class GeminiService {
       body: JSON.stringify(requestBody)
     });
 
-    // Smart fallback if model is 404 or deprecated
-    if (!response.ok && response.status === 404) {
-      const fallbackModels = ['gemini-3.8-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'].filter(m => m !== activeModel);
+    // Intelligent multi-model fallback for high demand (503), rate limits (429), deprecated/missing models (404), or server spikes (500/502/504)
+    const isFallbackEligible = (status: number) => {
+      return status === 503 || status === 429 || status === 404 || status === 500 || status === 502 || status === 504;
+    };
+
+    if (!response.ok && isFallbackEligible(response.status)) {
+      const fallbackModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-3.8-flash'].filter(m => m !== activeModel);
       for (const fallback of fallbackModels) {
-        onProgress?.(`Model ${activeModel} tidak tersedia. Mencoba fallback ke ${fallback}...`, 65);
-        const retryRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${fallback}:generateContent?key=${settings.apiKey.trim()}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody)
-        });
-        if (retryRes.ok) {
-          response = retryRes;
-          activeModel = fallback;
-          this.saveSettings({ ...settings, modelId: fallback });
-          break;
+        const reason = response.status === 503 
+          ? 'sedang mengalami lonjakan beban (503 High Demand)' 
+          : response.status === 429 
+            ? 'mencapai batas kuota (429 Rate Limit)' 
+            : `menghadapi kendala server (${response.status})`;
+            
+        onProgress?.(`Model ${activeModel} ${reason}. Mengalihkan otomatis ke model cadangan ${fallback}...`, 65);
+        try {
+          const retryRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${fallback}:generateContent?key=${settings.apiKey.trim()}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+          if (retryRes.ok) {
+            response = retryRes;
+            activeModel = fallback;
+            this.saveSettings({ ...settings, modelId: fallback });
+            break;
+          } else if (!isFallbackEligible(retryRes.status)) {
+            response = retryRes;
+            break;
+          }
+        } catch (retryErr) {
+          console.warn(`Fallback to ${fallback} failed:`, retryErr);
         }
       }
     }
@@ -219,6 +239,9 @@ export class GeminiService {
       }
       if (response.status === 429) {
         throw new Error(`Batas kuota Gemini API tercapai (429 Rate Limit): ${msg}`);
+      }
+      if (response.status === 503) {
+        throw new Error(`Server Gemini sedang mengalami lonjakan beban tinggi (503 High Demand). Semua model alternatif telah dicoba. Silakan coba kembali dalam 1-2 menit. Pesan server: ${msg}`);
       }
       throw new Error(`Gemini API Error (${response.status}): ${msg}`);
     }
@@ -307,8 +330,8 @@ export class GeminiService {
     replacementVocal?: string,
     customIntro?: CustomIntroConfig
   ): Promise<string> {
-    const targetModel = settings.modelId === 'gemini-2.5-flash' ? 'gemini-3.8-flash' : (settings.modelId || 'gemini-3.8-flash');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${settings.apiKey.trim()}`;
+    const primaryModel = settings.modelId === 'gemini-2.5-flash' ? 'gemini-2.0-flash' : (settings.modelId || 'gemini-2.0-flash');
+    const candidateModels = [primaryModel, 'gemini-2.0-flash', 'gemini-1.5-flash'].filter((m, i, arr) => m && arr.indexOf(m) === i);
     let notes = '';
     if (replacementVocal && replacementVocal.trim()) {
       notes += `\nNote: Ensure the target replacement vocal character ("${replacementVocal.trim()}") remains explicitly intact.`;
@@ -334,19 +357,28 @@ export class GeminiService {
       }
     };
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    for (const model of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${settings.apiKey.trim()}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-    if (!res.ok) {
-      // If optimization call fails, fallback to smart sentence boundary trim
-      return text.slice(0, 1490);
+        if (res.ok) {
+          const data = await res.json();
+          const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (resultText && resultText.trim()) {
+            return resultText.trim();
+          }
+        }
+      } catch (e) {
+        console.warn(`Optimization pass failed on model ${model}:`, e);
+      }
     }
 
-    const data = await res.json();
-    const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return resultText ? resultText.trim() : text.slice(0, 1490);
+    // If optimization calls fail across models, fallback to smart sentence boundary trim
+    return text.slice(0, 1490);
   }
 }

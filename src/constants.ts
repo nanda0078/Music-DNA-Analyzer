@@ -46,15 +46,15 @@ export const DEFAULT_CUSTOM_INTRO: CustomIntroConfig = {
 };
 
 export const AVAILABLE_MODELS = [
-  { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Rekomendasi Utama — Model Terbaru & Cepat)', description: 'Model multimodal generasi terbaru dengan akurasi analitis audio tertinggi dan latency rendah.' },
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Model multimodal cepat dengan kemampuan audio terstandarisasi.' },
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', description: 'Model efisien dengan audio input window besar.' },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: 'Model penalaran audio mendalam untuk analisis kompleks.' },
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Stabil & Cepat — Direkomendasikan)', description: 'Model multimodal generasi 2.0 resmi, stabil, latency rendah, dan performa audio tinggi.' },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Sangat Stabil — Bebas Beban/Antrean)', description: 'Model efisien dengan audio input window besar dan ketersediaan tinggi tanpa batasan demand.' },
+  { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Model Eksperimental / Beban Tinggi)', description: 'Model multimodal generasi terbaru (dapat mengalami antrean/lonjakan beban 503 saat server sibuk).' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Penalaran Kompleks)', description: 'Model penalaran audio mendalam untuk analisis musik multi-dimensi kompleks.' },
 ];
 
 export const DEFAULT_SETTINGS: ApiSettings = {
   apiKey: '',
-  modelId: 'gemini-3.8-flash',
+  modelId: 'gemini-2.0-flash',
   temperature: 0.2,
 };
 
