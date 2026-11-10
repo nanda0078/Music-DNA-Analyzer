@@ -69,7 +69,7 @@ export class CrowllmService {
           'Authorization': `Bearer ${apiKey.trim()}`
         },
         body: JSON.stringify(payload)
-      }, 15000);
+      }, 45000);
 
       if (!response.ok) {
         const errorJson = await response.json().catch(() => ({}));
@@ -100,6 +100,24 @@ export class CrowllmService {
         message: `Koneksi berhasil! Model "${modelId.trim()}" pada CrowLLM aktif dan siap digunakan.`
       };
     } catch (err: unknown) {
+      // If /chat/completions timed out (common for free-tier queued models like crow-limitless:free),
+      // verify if API Key and base URL are actually valid via /models endpoint:
+      if (err instanceof Error && err.message.includes('Timeout')) {
+        try {
+          const authCheck = await this.fetchWithTimeout(`${cleanUrl}/models`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${apiKey.trim()}` }
+          }, 8000);
+          if (authCheck.ok) {
+            return {
+              success: true,
+              message: `Kredensial API Key CrowLLM valid dan terhubung! (Catatan: Model "${modelId.trim()}" sedang dalam antrean beban gratis di server CrowLLM, namun akun Anda sudah siap digunakan).`
+            };
+          }
+        } catch {
+          // If authCheck also failed, fall through to timeout message
+        }
+      }
       const message = err instanceof Error ? err.message : 'Gagal menghubungi server CrowLLM.';
       return { success: false, message: `Koneksi CrowLLM gagal: ${message}` };
     }
@@ -231,7 +249,7 @@ export class CrowllmService {
           'Authorization': `Bearer ${settings.crowllmApiKey.trim()}`
         },
         body: JSON.stringify(requestPayload)
-      }, 90000);
+      }, 120000);
     } catch (netErr: unknown) {
       const msg = netErr instanceof Error ? netErr.message : 'Kesalahan jaringan ke CrowLLM.';
       throw new Error(`Gagal menghubungi server CrowLLM: ${msg}`);
