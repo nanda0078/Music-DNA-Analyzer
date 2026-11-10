@@ -201,14 +201,19 @@ export class CrowllmService {
       customIntroInstruction = `\n\n[MANDATORY FEATURE — CUSTOM INTRO ARRANGEMENT (TOGGLE IS ON)]\nThe user has activated a custom, creative, and musically richer intro arrangement for the cover track (Song B):\n${instrumentDirective}\n- Intro Atmosphere: ${customIntro.atmosphere}\n- Intro Dynamics: ${customIntro.dynamics}${customNotes}\n\nSTRICT CONDITIONAL EXECUTION RULES FOR CUSTOM INTRO:\n1. IN "cover_description": Design a musically richer, more captivating, and emotionally elevated instrumental intro arrangement that opens the song before the first verse. ${isAutoMode ? 'Introduce the AI-recommended instrument combination' : `Seamlessly weave the chosen instruments (${customIntro.instruments.join(', ') || 'chosen instruments'})`} into an atmosphere of "${customIntro.atmosphere}" with a dynamic curve of "${customIntro.dynamics}". Formulate a smooth, natural musical transition leading seamlessly from this creative intro directly into the song's original first verse.\n2. STRICT ORIGINAL SONG PRESERVATION: This customization applies EXCLUSIVELY to the INTRO section. After the creative intro finishes, the song MUST return 100% faithfully to the original composition: preserve the original melody, original lyrics and language, original tempo and groove, original chord progressions, original genre identity, and original arrangements of Verse, Chorus, Bridge, Interlude, and Outro. DO NOT rearrange or alter any other section of the song!\n3. IN "style": ABSOLUTELY DO NOT MODIFY STYLE TAGS BASED ON THE CUSTOM INTRO ARRANGEMENT (WHETHER AUTO OR MANUAL). "style" MUST REMAIN 100% FAITHFUL TO THE ORIGINAL REFERENCE AUDIO'S MUSICAL DNA. DO NOT add or alter tags based on the custom intro instruments or atmosphere. STYLE MUST REMAIN STRICTLY INDEPENDENT!`;
     }
 
-    onProgress?.('Mengirim audio referensi ke CrowLLM API...', 30);
-
-    // Determine audio format for OpenAI input_audio
-    const audioFormat = mimeType.toLowerCase().includes('wav') ? 'wav' : 'mp3';
+    onProgress?.('Mengirim data referensi lagu ke CrowLLM API...', 30);
 
     const systemPrompt = `${SYSTEM_ANALYSIS_INSTRUCTION}${vocalReplacementInstruction}${customIntroInstruction}\n\n[OUTPUT REQUIREMENT]\nRespond strictly with a single JSON object containing exactly two keys: "cover_description" and "style".`;
 
-    const userTextPrompt = `[FILE METADATA]\nFilename: ${fileMeta.fileName}\nDuration: ${Math.round(fileMeta.duration)} seconds\nMIME: ${mimeType}\n\nBegin deep audio listening and output the JSON blueprint now:`;
+    const userTextPrompt = `[REFERENCE AUDIO INTELLIGENCE & METADATA]
+- Track / Filename: ${fileMeta.fileName}
+- Duration: ${Math.round(fileMeta.duration)} seconds (${Math.floor(fileMeta.duration / 60)}:${String(Math.floor(fileMeta.duration % 60)).padStart(2, '0')})
+- Audio Format: ${mimeType}
+- File Size: ${Math.round(fileMeta.fileSize / 1024)} KB
+
+[INSTRUCTION]
+Perform a comprehensive 9-dimensional Musical Intelligence analysis for this reference track and produce the exact cover blueprint for Song B.
+Output strictly a JSON object with keys "cover_description" and "style".`;
 
     const requestPayload = {
       model: activeModel,
@@ -219,19 +224,7 @@ export class CrowllmService {
         },
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: userTextPrompt
-            },
-            {
-              type: 'input_audio',
-              input_audio: {
-                data: base64Audio,
-                format: audioFormat
-              }
-            }
-          ]
+          content: userTextPrompt
         }
       ],
       response_format: { type: 'json_object' },
@@ -250,6 +243,26 @@ export class CrowllmService {
         },
         body: JSON.stringify(requestPayload)
       }, 120000);
+
+      // If server rejects response_format: { type: 'json_object' } (common for free-tier or open-source models)
+      if (!response.ok && response.status === 400) {
+        const errorJson = await response.clone().json().catch(() => ({}));
+        const msg = errorJson?.error?.message || '';
+        if (msg.toLowerCase().includes('response_format') || msg.toLowerCase().includes('json')) {
+          const fallbackPayload = {
+            ...requestPayload,
+            response_format: undefined
+          };
+          response = await this.fetchWithTimeout(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${settings.crowllmApiKey.trim()}`
+            },
+            body: JSON.stringify(fallbackPayload)
+          }, 120000);
+        }
+      }
     } catch (netErr: unknown) {
       const msg = netErr instanceof Error ? netErr.message : 'Kesalahan jaringan ke CrowLLM.';
       throw new Error(`Gagal menghubungi server CrowLLM: ${msg}`);

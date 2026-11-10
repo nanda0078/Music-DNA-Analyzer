@@ -11,15 +11,15 @@ export class AiRouter {
     const msg = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
 
     // User input or model limitations are NOT fallback eligible
-    if (msg.includes('tidak mendukung input audio') || msg.includes('format audio') || msg.includes('ukuran request ditolak')) {
-      return false;
-    }
-    if (msg.includes('api key tidak valid') || msg.includes('belum diatur') || msg.includes('401 unauthorized')) {
+    if (msg.includes('tidak mendukung input audio') || msg.includes('api key tidak valid') || msg.includes('belum diatur') || msg.includes('401 unauthorized')) {
       return false;
     }
 
-    // Server-side downtime, rate limits, high demand spikes, and network timeouts are eligible
+    // Server-side downtime, schema/gateway rejections (400), rate limits, high demand spikes, and network timeouts are eligible
     return (
+      msg.includes('400') ||
+      msg.includes('bad request') ||
+      msg.includes('messages.') ||
       msg.includes('503') ||
       msg.includes('502') ||
       msg.includes('500') ||
