@@ -24,9 +24,15 @@ export class GeminiService {
           activeModel = 'gemini-2.0-flash';
         }
         return {
+          provider: (parsed.provider === 'crowllm' || parsed.provider === 'gemini') ? parsed.provider : DEFAULT_SETTINGS.provider,
           apiKey: parsed.apiKey || '',
           modelId: activeModel,
           temperature: typeof parsed.temperature === 'number' ? parsed.temperature : DEFAULT_SETTINGS.temperature,
+          crowllmApiKey: parsed.crowllmApiKey || '',
+          crowllmBaseUrl: parsed.crowllmBaseUrl || DEFAULT_SETTINGS.crowllmBaseUrl,
+          crowllmModelId: parsed.crowllmModelId || DEFAULT_SETTINGS.crowllmModelId,
+          enableAutoFallback: Boolean(parsed.enableAutoFallback),
+          fallbackProvider: parsed.fallbackProvider || 'gemini',
         };
       }
     } catch (e) {

@@ -4,6 +4,7 @@ import { AudioMetadata, AnalysisResult, ProgressState, ApiSettings, CustomIntroC
 import { DEFAULT_CUSTOM_INTRO } from './constants';
 import { AudioProcessor } from './services/audioProcessor';
 import { GeminiService } from './services/geminiService';
+import { AiRouter } from './services/aiRouter';
 import { HistoryService } from './services/historyService';
 import { Navbar } from './components/Navbar';
 import { AudioUploader } from './components/AudioUploader';
@@ -55,6 +56,20 @@ export const App: React.FC = () => {
 
   const refreshHistory = () => {
     setHistory(HistoryService.getHistory());
+  };
+
+  const isProviderConfigured = (st: ApiSettings): boolean => {
+    if (st.provider === 'crowllm') {
+      return Boolean(st.crowllmApiKey && st.crowllmApiKey.trim());
+    }
+    return Boolean(st.apiKey && st.apiKey.trim());
+  };
+
+  const getActiveModelName = (st: ApiSettings): string => {
+    if (st.provider === 'crowllm') {
+      return st.crowllmModelId || 'gpt-4o';
+    }
+    return st.modelId || 'gemini-2.0-flash';
   };
 
   // Handle file selection and decoding
@@ -110,7 +125,7 @@ export const App: React.FC = () => {
       return;
     }
 
-    if (!settings.apiKey) {
+    if (!isProviderConfigured(settings)) {
       setIsSettingsOpen(true);
       return;
     }
@@ -118,15 +133,18 @@ export const App: React.FC = () => {
     const controller = new AbortController();
     setAbortController(controller);
 
+    const activeModel = getActiveModelName(settings);
+    const providerLabel = settings.provider === 'crowllm' ? 'CrowLLM' : 'Gemini';
+
     setProgress({
       status: 'analyzing',
       percentage: 20,
       message: 'Mempersiapkan data audio referensi...',
-      subMessage: `Menggunakan model ${settings.modelId}`
+      subMessage: `Menggunakan ${providerLabel} (${activeModel})`
     });
 
     try {
-      const result = await GeminiService.analyzeAudio(
+      const result = await AiRouter.analyzeAudio(
         base64Audio,
         audioMetadata.fileType,
         {
@@ -143,7 +161,8 @@ export const App: React.FC = () => {
           }));
         },
         replacementVocal,
-        customIntro
+        customIntro,
+        settings
       );
 
       setCurrentResult(result);
@@ -223,8 +242,9 @@ export const App: React.FC = () => {
       
       {/* Top Studio Navbar */}
       <Navbar
-        hasApiKey={Boolean(settings.apiKey)}
-        modelId={settings.modelId}
+        hasApiKey={isProviderConfigured(settings)}
+        modelId={getActiveModelName(settings)}
+        provider={settings.provider}
         historyCount={history.length}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenHistory={() => setIsHistoryOpen(true)}

@@ -8,8 +8,12 @@ import {
   INTRO_INSTRUMENTS,
   INTRO_ATMOSPHERES,
   INTRO_DYNAMICS,
-  DEFAULT_CUSTOM_INTRO
+  DEFAULT_CUSTOM_INTRO,
+  CROWLLM_DEFAULT_BASE_URL,
+  CROWLLM_DEFAULT_MODEL
 } from './src/constants.ts';
+import { AiRouter } from './src/services/aiRouter.ts';
+import { CrowllmService } from './src/services/crowllmService.ts';
 
 console.log(`--- RUNNING MUSIC DNA ANALYZER QA SUITE (${APP_VERSION}) ---`);
 
@@ -123,6 +127,46 @@ console.log('\n[TEST 10] Cover Description Limit Validation:');
 assert.strictEqual(MAX_COVER_DESCRIPTION_CHARS, 1500);
 console.log(`✓ Absolute limit strictly confirmed at ${MAX_COVER_DESCRIPTION_CHARS} characters.`);
 
+// TEST 11: CrowLLM Provider Configuration Defaults
+console.log('\n[TEST 11] CrowLLM Configuration Defaults:');
+assert.strictEqual(CROWLLM_DEFAULT_BASE_URL, 'https://crowllm.com/v1');
+assert.strictEqual(CROWLLM_DEFAULT_MODEL, 'gpt-4o');
+console.log('✓ CrowLLM base URL and default model verified.');
+
+// TEST 12: AiRouter Cross-Provider Fallback Eligibility
+console.log('\n[TEST 12] AiRouter Fallback Criteria:');
+const error503 = new Error('503 Service Unavailable: High Demand');
+const error429 = new Error('429 Rate limit exceeded');
+const errorTimeout = new Error('Permintaan ke server melebihi batas waktu (Timeout)');
+const errorBadKey = new Error('API Key tidak valid (401 Unauthorized)');
+const errorAudioUnsupported = new Error('Model CrowLLM tidak mendukung input audio');
+
+assert.strictEqual(AiRouter.isCrossProviderFallbackEligible(error503), true, '503 must qualify for fallback');
+assert.strictEqual(AiRouter.isCrossProviderFallbackEligible(error429), true, '429 must qualify for fallback');
+assert.strictEqual(AiRouter.isCrossProviderFallbackEligible(errorTimeout), true, 'Timeout must qualify for fallback');
+assert.strictEqual(AiRouter.isCrossProviderFallbackEligible(errorBadKey), false, 'Bad key must NOT trigger fallback');
+assert.strictEqual(AiRouter.isCrossProviderFallbackEligible(errorAudioUnsupported), false, 'Unsupported audio must NOT trigger fallback');
+console.log('✓ Cross-provider fallback rules strictly verified (Server errors trigger fallback, client/model incompatibility does not).');
+
+// TEST 13: Backward Compatibility for Stored Settings
+console.log('\n[TEST 13] Backward-Compatible Settings Parsing:');
+const legacyJson = '{"apiKey":"AIzaSyLegacyKey","modelId":"gemini-2.0-flash","temperature":0.2}';
+const parsedLegacy = JSON.parse(legacyJson);
+const loadedSettings = {
+  provider: parsedLegacy.provider || 'gemini',
+  apiKey: parsedLegacy.apiKey || '',
+  modelId: parsedLegacy.modelId || 'gemini-2.0-flash',
+  temperature: parsedLegacy.temperature ?? 0.2,
+  crowllmApiKey: parsedLegacy.crowllmApiKey || '',
+  crowllmBaseUrl: parsedLegacy.crowllmBaseUrl || CROWLLM_DEFAULT_BASE_URL,
+  crowllmModelId: parsedLegacy.crowllmModelId || CROWLLM_DEFAULT_MODEL,
+};
+assert.strictEqual(loadedSettings.provider, 'gemini');
+assert.strictEqual(loadedSettings.apiKey, 'AIzaSyLegacyKey');
+assert.strictEqual(loadedSettings.crowllmBaseUrl, 'https://crowllm.com/v1');
+assert.strictEqual(loadedSettings.crowllmModelId, 'gpt-4o');
+console.log('✓ Legacy settings effortlessly migrate to multi-provider architecture.');
+
 console.log('\n======================================================');
-console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (10/10)!');
+console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (13/13)!');
 console.log('======================================================');

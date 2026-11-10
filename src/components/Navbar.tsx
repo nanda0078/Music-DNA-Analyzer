@@ -1,10 +1,12 @@
 import React from 'react';
 import { Sparkles, Key, History, Activity, Radio } from 'lucide-react';
 import { APP_NAME, APP_VERSION } from '../constants';
+import { ApiProvider } from '../types';
 
 interface NavbarProps {
   hasApiKey: boolean;
   modelId: string;
+  provider?: ApiProvider;
   historyCount: number;
   onOpenSettings: () => void;
   onOpenHistory: () => void;
@@ -14,6 +16,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   hasApiKey,
   modelId,
+  provider = 'gemini',
   historyCount,
   onOpenSettings,
   onOpenHistory,
@@ -55,11 +58,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20' 
                 : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
             }`}
-            title="Klik untuk mengubah Pengaturan API"
+            title="Klik untuk mengubah Pengaturan API & Provider"
           >
             <span className={`w-2 h-2 rounded-full ${hasApiKey ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
             <span className="font-medium">
-              {hasApiKey ? `Gemini Terhubung (${modelId.replace('gemini-', '')})` : 'Kunci API Belum Diatur'}
+              {hasApiKey 
+                ? provider === 'crowllm'
+                  ? `CrowLLM (${modelId})`
+                  : `Gemini (${modelId.replace('gemini-', '')})`
+                : 'Kunci API Belum Diatur'}
             </span>
           </div>
 

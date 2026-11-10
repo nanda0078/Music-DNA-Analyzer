@@ -52,10 +52,19 @@ export const AVAILABLE_MODELS = [
   { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Penalaran Kompleks)', description: 'Model penalaran audio mendalam untuk analisis musik multi-dimensi kompleks.' },
 ];
 
+export const CROWLLM_DEFAULT_BASE_URL = 'https://crowllm.com/v1';
+export const CROWLLM_DEFAULT_MODEL = 'gpt-4o';
+
 export const DEFAULT_SETTINGS: ApiSettings = {
+  provider: 'gemini',
   apiKey: '',
   modelId: 'gemini-2.0-flash',
   temperature: 0.2,
+  crowllmApiKey: '',
+  crowllmBaseUrl: CROWLLM_DEFAULT_BASE_URL,
+  crowllmModelId: CROWLLM_DEFAULT_MODEL,
+  enableAutoFallback: false,
+  fallbackProvider: 'gemini',
 };
 
 export const MAX_COVER_DESCRIPTION_CHARS = 1500;
