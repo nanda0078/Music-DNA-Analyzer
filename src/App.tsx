@@ -32,6 +32,7 @@ export const App: React.FC = () => {
   const [base64Audio, setBase64Audio] = useState<string | null>(null);
 
   // Creative Cover Settings state (v1.0.1 & v1.0.2 Pro)
+  const [vocalReplacementEnabled, setVocalReplacementEnabled] = useState<boolean>(false);
   const [replacementVocal, setReplacementVocal] = useState<string>('');
   const [customIntro, setCustomIntro] = useState<CustomIntroConfig>(DEFAULT_CUSTOM_INTRO);
 
@@ -112,6 +113,7 @@ export const App: React.FC = () => {
     setAudioMetadata(null);
     setWaveformPeaks([]);
     setBase64Audio(null);
+    setVocalReplacementEnabled(false);
     setReplacementVocal('');
     setCustomIntro(DEFAULT_CUSTOM_INTRO);
     setCurrentResult(null);
@@ -144,6 +146,10 @@ export const App: React.FC = () => {
     });
 
     try {
+      const effectiveVocal = (vocalReplacementEnabled && replacementVocal.trim())
+        ? replacementVocal.trim()
+        : undefined;
+
       const result = await AiRouter.analyzeAudio(
         base64Audio,
         audioMetadata.fileType,
@@ -160,7 +166,7 @@ export const App: React.FC = () => {
             message: stepMessage,
           }));
         },
-        replacementVocal,
+        effectiveVocal,
         customIntro,
         settings
       );
@@ -312,6 +318,8 @@ export const App: React.FC = () => {
 
                 {/* VOCAL CHARACTER REPLACEMENT */}
                 <VocalReplacementPanel
+                  enabled={vocalReplacementEnabled}
+                  onToggle={() => setVocalReplacementEnabled(!vocalReplacementEnabled)}
                   value={replacementVocal}
                   onChange={setReplacementVocal}
                   onReset={() => setReplacementVocal('')}

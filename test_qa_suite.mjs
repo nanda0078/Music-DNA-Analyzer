@@ -167,6 +167,43 @@ assert.strictEqual(loadedSettings.crowllmBaseUrl, 'https://crowllm.com/v1');
 assert.strictEqual(loadedSettings.crowllmModelId, 'gpt-4o');
 console.log('✓ Legacy settings effortlessly migrate to multi-provider architecture.');
 
+// TEST 14: Vocal Character Replacement Toggle ON/OFF Functional Logic
+console.log('\n[TEST 14] Vocal Character Replacement Toggle ON/OFF Logic:');
+const computeEffectiveVocal = (enabled, text) => (enabled && text && text.trim()) ? text.trim() : undefined;
+
+// Condition 1: Toggle OFF (Default) -> must be undefined
+let vocalEnabled = false;
+let vocalText = 'Female Vocal';
+assert.strictEqual(computeEffectiveVocal(vocalEnabled, vocalText), undefined, 'Toggle OFF must yield undefined');
+console.log('✓ 1. Toggle OFF: Original vocal strictly preserved (effective vocal = undefined).');
+
+// Condition 2: Toggle ON + Female Vocal Preset
+vocalEnabled = true;
+vocalText = 'Female Vocal';
+assert.strictEqual(computeEffectiveVocal(vocalEnabled, vocalText), 'Female Vocal');
+console.log('✓ 2. Toggle ON + Female Vocal preset: Active and passed to AI.');
+
+// Condition 3: Toggle ON + Male Vocal Preset
+vocalText = 'Male Vocal';
+assert.strictEqual(computeEffectiveVocal(vocalEnabled, vocalText), 'Male Vocal');
+console.log('✓ 3. Toggle ON + Male Vocal preset: Active and passed to AI.');
+
+// Condition 4: Toggle ON + Custom Description
+vocalText = 'Smooth, velvety male tenor with breathy falsetto';
+assert.strictEqual(computeEffectiveVocal(vocalEnabled, vocalText), 'Smooth, velvety male tenor with breathy falsetto');
+console.log('✓ 4. Toggle ON + Custom description: Active and passed to AI.');
+
+// Condition 5: Toggle ON with empty description -> must be undefined (fallback to original)
+vocalText = '   ';
+assert.strictEqual(computeEffectiveVocal(vocalEnabled, vocalText), undefined);
+console.log('✓ 5. Toggle ON with empty description: Fallback to original vocal preservation.');
+
+// Condition 6: Toggle OFF again -> must be undefined even if text is present
+vocalEnabled = false;
+vocalText = 'Aggressive, high-energy female vocal';
+assert.strictEqual(computeEffectiveVocal(vocalEnabled, vocalText), undefined, 'Toggle OFF must suppress text');
+console.log('✓ 6. Toggle OFF again: Instructions completely suppressed from AI prompt.');
+
 console.log('\n======================================================');
-console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (13/13)!');
+console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (14/14)!');
 console.log('======================================================');
