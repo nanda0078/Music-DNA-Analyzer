@@ -17,6 +17,8 @@ export interface CustomIntroConfig {
   customInstruction?: string;
 }
 
+export type VocalGender = 'male' | 'female' | 'duet';
+
 export interface AnalysisResult {
   id: string;
   timestamp: number;
@@ -29,6 +31,7 @@ export interface AnalysisResult {
   modelUsed: string;
   wasOptimized?: boolean;
   replacementVocal?: string;
+  vocalGender?: VocalGender;
   customIntro?: CustomIntroConfig;
 }
 

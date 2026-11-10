@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Copy, Check, Edit3, ShieldAlert, CheckCircle2, Sparkles, AlertTriangle, Mic2, Music2 } from 'lucide-react';
 import { MAX_COVER_DESCRIPTION_CHARS } from '../constants';
 import { ValidatorService } from '../services/validatorService';
-import { CustomIntroConfig } from '../types';
+import { CustomIntroConfig, VocalGender } from '../types';
 
 interface ResultCoverDescriptionProps {
   description: string;
   onChange: (newDescription: string) => void;
   wasOptimized?: boolean;
   replacementVocal?: string;
+  vocalGender?: VocalGender;
   customIntro?: CustomIntroConfig;
 }
 
@@ -17,6 +18,7 @@ export const ResultCoverDescription: React.FC<ResultCoverDescriptionProps> = ({
   onChange,
   wasOptimized = false,
   replacementVocal,
+  vocalGender,
   customIntro,
 }) => {
   const [copied, setCopied] = useState(false);
@@ -54,10 +56,12 @@ export const ResultCoverDescription: React.FC<ResultCoverDescriptionProps> = ({
           <div>
             <h3 className="text-base font-extrabold uppercase tracking-wide text-white flex flex-wrap items-center gap-2">
               <span>COVER DESCRIPTION</span>
-              {replacementVocal && (
+              {(replacementVocal || vocalGender) && (
                 <span className="px-2 py-0.5 text-[10px] font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 rounded-md flex items-center space-x-1" title="Vocal Character Replacement Aktif">
                   <Mic2 className="w-3 h-3 text-indigo-400" />
-                  <span>Vocal: {replacementVocal}</span>
+                  <span>
+                    Vocal: {vocalGender ? vocalGender.toUpperCase() : ''}{replacementVocal ? ` (${replacementVocal})` : ''}
+                  </span>
                 </span>
               )}
               {customIntro?.enabled && (

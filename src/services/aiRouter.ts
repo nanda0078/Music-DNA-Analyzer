@@ -1,4 +1,4 @@
-import { ApiSettings, AnalysisResult, CustomIntroConfig, ApiProvider } from '../types';
+import { ApiSettings, AnalysisResult, CustomIntroConfig, ApiProvider, VocalGender } from '../types';
 import { GeminiService } from './geminiService';
 import { CrowllmService } from './crowllmService';
 
@@ -64,7 +64,8 @@ export class AiRouter {
     onProgress?: (step: string, percentage: number) => void,
     replacementVocal?: string,
     customIntro?: CustomIntroConfig,
-    settingsOverride?: ApiSettings
+    settingsOverride?: ApiSettings,
+    vocalGender?: VocalGender
   ): Promise<AnalysisResult> {
     const settings = settingsOverride || GeminiService.getStoredSettings();
     const primaryProvider: ApiProvider = settings.provider || 'gemini';
@@ -78,7 +79,8 @@ export class AiRouter {
           onProgress,
           replacementVocal,
           customIntro,
-          settings
+          settings,
+          vocalGender
         );
       } else {
         return await GeminiService.analyzeAudio(
@@ -87,7 +89,8 @@ export class AiRouter {
           fileMeta,
           onProgress,
           replacementVocal,
-          customIntro
+          customIntro,
+          vocalGender
         );
       }
     } catch (primaryError: unknown) {
@@ -120,7 +123,8 @@ export class AiRouter {
             onProgress,
             replacementVocal,
             customIntro,
-            settings
+            settings,
+            vocalGender
           );
         } else {
           return await GeminiService.analyzeAudio(
@@ -129,7 +133,8 @@ export class AiRouter {
             fileMeta,
             onProgress,
             replacementVocal,
-            customIntro
+            customIntro,
+            vocalGender
           );
         }
       } catch (secondaryError: unknown) {

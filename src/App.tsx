@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Music, Play, AlertCircle, ArrowRight, ShieldCheck, Disc3 } from 'lucide-react';
-import { AudioMetadata, AnalysisResult, ProgressState, ApiSettings, CustomIntroConfig } from './types';
+import { AudioMetadata, AnalysisResult, ProgressState, ApiSettings, CustomIntroConfig, VocalGender } from './types';
 import { DEFAULT_CUSTOM_INTRO } from './constants';
 import { AudioProcessor } from './services/audioProcessor';
 import { GeminiService } from './services/geminiService';
@@ -33,6 +33,7 @@ export const App: React.FC = () => {
 
   // Creative Cover Settings state (v1.0.1 & v1.0.2 Pro)
   const [vocalReplacementEnabled, setVocalReplacementEnabled] = useState<boolean>(false);
+  const [vocalGender, setVocalGender] = useState<VocalGender>('female');
   const [replacementVocal, setReplacementVocal] = useState<string>('');
   const [customIntro, setCustomIntro] = useState<CustomIntroConfig>(DEFAULT_CUSTOM_INTRO);
 
@@ -146,8 +147,9 @@ export const App: React.FC = () => {
     });
 
     try {
-      const effectiveVocal = (vocalReplacementEnabled && replacementVocal.trim())
-        ? replacementVocal.trim()
+      const effectiveGender = vocalReplacementEnabled ? vocalGender : undefined;
+      const effectiveVocal = vocalReplacementEnabled
+        ? (replacementVocal.trim() || undefined)
         : undefined;
 
       const result = await AiRouter.analyzeAudio(
@@ -168,7 +170,8 @@ export const App: React.FC = () => {
         },
         effectiveVocal,
         customIntro,
-        settings
+        settings,
+        effectiveGender
       );
 
       setCurrentResult(result);
@@ -324,6 +327,8 @@ export const App: React.FC = () => {
                   onChange={setReplacementVocal}
                   onReset={() => setReplacementVocal('')}
                   disabled={isProcessing}
+                  gender={vocalGender}
+                  onGenderChange={setVocalGender}
                 />
 
                 {/* CUSTOM INTRO ARRANGEMENT (v1.0.2 Pro) */}
@@ -395,6 +400,7 @@ export const App: React.FC = () => {
               wasOptimized={currentResult.wasOptimized}
               replacementVocal={currentResult.replacementVocal}
               customIntro={currentResult.customIntro}
+              vocalGender={currentResult.vocalGender}
             />
 
             {/* PANEL 2: 02. STYLE */}

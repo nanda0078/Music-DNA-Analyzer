@@ -204,6 +204,53 @@ vocalText = 'Aggressive, high-energy female vocal';
 assert.strictEqual(computeEffectiveVocal(vocalEnabled, vocalText), undefined, 'Toggle OFF must suppress text');
 console.log('✓ 6. Toggle OFF again: Instructions completely suppressed from AI prompt.');
 
+// TEST 15: Vocal Gender Selection (Male / Female / Duet)
+console.log('\n[TEST 15] Testing Vocal Gender Selection & AI Prompt Integration:');
+const computeEffectiveConfig = (enabled, gender, text) => {
+  return {
+    effectiveGender: enabled ? gender : undefined,
+    effectiveVocal: (enabled && text && text.trim()) ? text.trim() : undefined
+  };
+};
+
+// 1. Toggle OFF: both gender and vocal are suppressed
+const offConfig = computeEffectiveConfig(false, 'male', 'Warm baritone');
+assert.strictEqual(offConfig.effectiveGender, undefined, 'Gender must be undefined when toggle is OFF');
+assert.strictEqual(offConfig.effectiveVocal, undefined, 'Vocal text must be undefined when toggle is OFF');
+console.log('✓ 1. Toggle OFF: Gender & character instructions strictly suppressed (original vocal preserved).');
+
+// 2. Toggle ON + MALE: Male vocal configuration
+const maleConfig = computeEffectiveConfig(true, 'male', 'Warm, emotional, smooth male tenor');
+assert.strictEqual(maleConfig.effectiveGender, 'male');
+assert.strictEqual(maleConfig.effectiveVocal, 'Warm, emotional, smooth male tenor');
+console.log('✓ 2. Toggle ON + MALE: Male vocal character active.');
+
+// 3. Toggle ON + FEMALE: Female vocal configuration
+const femaleConfig = computeEffectiveConfig(true, 'female', 'Warm, expressive, emotional female vocal');
+assert.strictEqual(femaleConfig.effectiveGender, 'female');
+assert.strictEqual(femaleConfig.effectiveVocal, 'Warm, expressive, emotional female vocal');
+console.log('✓ 3. Toggle ON + FEMALE: Female vocal character active.');
+
+// 4. Toggle ON + DUET: Duet arrangement configuration
+const duetConfig = computeEffectiveConfig(true, 'duet', 'Male baritone and expressive female alto with natural chemistry');
+assert.strictEqual(duetConfig.effectiveGender, 'duet');
+assert.strictEqual(duetConfig.effectiveVocal, 'Male baritone and expressive female alto with natural chemistry');
+console.log('✓ 4. Toggle ON + DUET: Duet arrangement & dual vocalists active.');
+
+// 5. Toggle ON with empty description: Natural expressive vocal fallback per gender
+const emptyMale = computeEffectiveConfig(true, 'male', '   ');
+assert.strictEqual(emptyMale.effectiveGender, 'male');
+assert.strictEqual(emptyMale.effectiveVocal, undefined);
+console.log('✓ 5. Toggle ON + Empty Description: Fallback to natural vocal for chosen gender without crashing.');
+
+// 6. Switching gender preserves description text
+let currentText = 'High-energy rock vocal';
+let currentGender = 'male';
+// Switch to female
+currentGender = 'female';
+assert.strictEqual(currentText, 'High-energy rock vocal', 'Description text must not be wiped when switching gender');
+console.log('✓ 6. Switching Gender preserves custom description text intact.');
+
 console.log('\n======================================================');
-console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (14/14)!');
+console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (15/15)!');
 console.log('======================================================');

@@ -1,9 +1,12 @@
 import React from 'react';
-import { Mic2, RotateCcw, Sparkles, Shield, UserCheck } from 'lucide-react';
+import { Mic2, RotateCcw, Sparkles, Shield, UserCheck, Users } from 'lucide-react';
+import { VocalGender } from '../types';
 
 interface VocalReplacementPanelProps {
   enabled: boolean;
   onToggle: () => void;
+  gender: VocalGender;
+  onGenderChange: (gender: VocalGender) => void;
   value: string;
   onChange: (value: string) => void;
   onReset: () => void;
@@ -13,6 +16,8 @@ interface VocalReplacementPanelProps {
 export const VocalReplacementPanel: React.FC<VocalReplacementPanelProps> = ({
   enabled,
   onToggle,
+  gender,
+  onGenderChange,
   value,
   onChange,
   onReset,
@@ -59,22 +64,22 @@ export const VocalReplacementPanel: React.FC<VocalReplacementPanelProps> = ({
               }`}>
                 {enabled ? 'ON' : 'OFF'}
               </span>
-              {enabled && isFilled && (
+              {enabled && (
                 <span className="hidden xs:inline-flex px-2 py-0.5 text-[10px] font-bold text-indigo-300 bg-indigo-500/20 rounded border border-indigo-500/30 items-center space-x-1">
                   <UserCheck className="w-3 h-3 text-indigo-400" />
-                  <span>Karakter Aktif</span>
+                  <span>{gender.toUpperCase()}{isFilled ? ' • Karakter Aktif' : ''}</span>
                 </span>
               )}
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Ubah karakter suara penyanyi pada cover tanpa mengubah melodi, instrumen, atau aransemen asli
+              Tentukan gender dan karakter vokal pengganti tanpa mengubah melodi atau aransemen asli
             </p>
           </div>
         </div>
 
         {/* Toggle Switch & Reset Button */}
         <div className="flex items-center space-x-3 self-end sm:self-auto">
-          {enabled && isFilled && (
+          {enabled && (isFilled || gender !== 'female') && (
             <button
               type="button"
               onClick={onReset}
@@ -113,10 +118,11 @@ export const VocalReplacementPanel: React.FC<VocalReplacementPanelProps> = ({
       </div>
 
       {/* Configuration Section (Active only when toggle is ON) */}
-      <div className={`space-y-3 transition-all duration-300 ${
+      <div className={`space-y-4 transition-all duration-300 ${
         !enabled ? 'opacity-40 pointer-events-none select-none grayscale-[40%]' : ''
       }`}>
-        <div className="relative">
+        {/* Text Input Field */}
+        <div className="space-y-1.5">
           <input
             type="text"
             value={value}
@@ -125,6 +131,41 @@ export const VocalReplacementPanel: React.FC<VocalReplacementPanelProps> = ({
             placeholder="Describe the desired replacement vocal character..."
             className="w-full px-4 py-3 rounded-xl bg-studio-950/80 border border-studio-700/80 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-sans transition-all disabled:opacity-50"
           />
+        </div>
+
+        {/* VOCAL GENDER Segmented Control */}
+        <div className="space-y-1.5 pt-0.5">
+          <div className="flex items-center justify-between">
+            <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
+              <Users className="w-3.5 h-3.5 text-indigo-400" />
+              <span>VOCAL GENDER</span>
+            </label>
+            <span className="text-[10px] text-slate-400">
+              {gender === 'duet' ? 'Duet (Laki-laki & Perempuan)' : gender === 'male' ? 'Penyanyi Pria' : 'Penyanyi Wanita'}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 p-1 bg-studio-950/80 rounded-xl border border-studio-800">
+            {(['female', 'male', 'duet'] as const).map((g) => {
+              const isSelected = gender === g;
+              const label = g.toUpperCase();
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  disabled={!enabled || disabled}
+                  onClick={() => onGenderChange(g)}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+                    isSelected && enabled
+                      ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-studio-800/60 disabled:opacity-40'
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${isSelected && enabled ? 'bg-white' : 'bg-slate-600'}`} />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Quick Suggestion Chips */}
@@ -155,13 +196,9 @@ export const VocalReplacementPanel: React.FC<VocalReplacementPanelProps> = ({
           <Shield className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
           <span>
             {enabled ? (
-              isFilled ? (
-                <span className="text-indigo-300">
-                  <strong>Catatan Integrasi:</strong> Karakter vokal pengganti <strong>hanya memengaruhi output 01. COVER DESCRIPTION</strong>. Output 02. STYLE tetap independen berdasarkan Original Musical DNA.
-                </span>
-              ) : (
-                <span>Kolom deskripsi kosong: Vokal penyanyi asli akan dipertahankan sesuai hasil rekaman.</span>
-              )
+              <span className="text-indigo-300">
+                <strong>Catatan Integrasi:</strong> Pilihan gender <strong>{gender.toUpperCase()}</strong> {isFilled ? `dengan karakter "${value}"` : 'dengan karakter vokal natural'} hanya memengaruhi <strong>01. COVER DESCRIPTION</strong>. Output 02. STYLE tetap independen.
+              </span>
             ) : (
               <span>Toggle OFF: Fitur tidak aktif. Karakter suara penyanyi asli dipertahankan secara utuh.</span>
             )}

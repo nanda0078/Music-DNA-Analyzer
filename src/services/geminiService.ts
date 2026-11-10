@@ -1,4 +1,4 @@
-import { ApiSettings, AnalysisResult, CustomIntroConfig } from '../types';
+import { ApiSettings, AnalysisResult, CustomIntroConfig, VocalGender } from '../types';
 import { 
   DEFAULT_SETTINGS, 
   MAX_COVER_DESCRIPTION_CHARS, 
@@ -127,7 +127,8 @@ export class GeminiService {
     fileMeta: { fileName: string; fileSize: number; duration: number },
     onProgress?: (step: string, percentage: number) => void,
     replacementVocal?: string,
-    customIntro?: CustomIntroConfig
+    customIntro?: CustomIntroConfig,
+    vocalGender?: VocalGender
   ): Promise<AnalysisResult> {
     const settings = this.getStoredSettings();
     if (!settings.apiKey) {
@@ -140,10 +141,28 @@ export class GeminiService {
     }
 
     // 1. Vocal Replacement Instruction
-    const hasVocalReplacement = Boolean(replacementVocal && replacementVocal.trim());
-    const vocalReplacementInstruction = hasVocalReplacement
-      ? `\n\n[MANDATORY FEATURE — VOCAL CHARACTER REPLACEMENT]\nThe user has explicitly requested a VOCAL CHARACTER REPLACEMENT for the cover track (Song B):\nTARGET REPLACEMENT VOCAL: "${replacementVocal!.trim()}"\n\nSTRICT CONDITIONAL EXECUTION RULES:\n1. IN "cover_description": Replace the original singer's vocal character, vocal timbre, gender presentation, and vocal delivery with this TARGET VOCAL CHARACTER ("${replacementVocal!.trim()}"). Seamlessly integrate this replacement vocal into the single cohesive cover description paragraph. DO NOT alter the original song's melody, lyrics, language, rhythm, tempo, instrumentation, chord progressions, arrangement builds, mood, or mix textures — ONLY replace the vocal character.\n2. IN "style": ABSOLUTELY DO NOT MODIFY STYLE TAGS BASED ON THIS VOCAL REPLACEMENT. "style" MUST REMAIN 100% FAITHFUL TO THE ORIGINAL REFERENCE AUDIO'S MUSICAL DNA (original genre, original mood, original instrumentation, original tempo, original mix quality). STYLE MUST REMAIN STRICTLY INDEPENDENT FROM VOCAL CHARACTER REPLACEMENT.`
-      : `\n\n[VOCAL CHARACTER HANDLING]\nNo replacement vocal character specified. Preserve and describe the original singer's vocal character exactly as detected in the audio.`;
+    const hasVocalReplacement = Boolean(vocalGender || (replacementVocal && replacementVocal.trim()));
+    let vocalReplacementInstruction = `\n\n[VOCAL CHARACTER HANDLING]\nNo replacement vocal character specified. Preserve and describe the original singer's vocal character exactly as detected in the audio.`;
+
+    if (hasVocalReplacement) {
+      const activeGender = vocalGender || 'female';
+      const userText = replacementVocal && replacementVocal.trim() ? replacementVocal.trim() : '';
+
+      let genderDirective = '';
+      if (activeGender === 'duet') {
+        genderDirective = `TARGET VOCAL CONFIGURATION: DUET (MALE & FEMALE LEAD VOCALS)\nDUET EXECUTION RULES:\n- The cover MUST feature two distinct lead vocalists (one male, one female).\n- Arrange the vocal distribution musically and naturally: verse lines/sections should be divided dynamically between the male and female singers, the chorus should feature complementary dual-vocal harmonization, and the bridge can feature call-and-response or interwoven solo lines leading into a full harmonic climax.\n- Avoid having both vocalists sing every lyric in unison without musical justification; ensure smooth, organic transitions and natural vocal chemistry between both voices.`;
+      } else if (activeGender === 'male') {
+        genderDirective = `TARGET VOCAL CONFIGURATION: MALE LEAD VOCAL\nMALE VOCAL EXECUTION RULES:\n- The cover MUST feature a MALE lead vocal.\n- If the original song was sung by a female or higher register singer, adjust the vocal register and octave musically for a male vocalist without distorting the song's melodic contours, rhythm, phrasing, or lyrical timing.`;
+      } else {
+        genderDirective = `TARGET VOCAL CONFIGURATION: FEMALE LEAD VOCAL\nFEMALE VOCAL EXECUTION RULES:\n- The cover MUST feature a FEMALE lead vocal.\n- If the original song was sung by a male or lower register singer, adjust the vocal register and octave musically for a female vocalist without distorting the song's melodic contours, rhythm, phrasing, or lyrical timing.`;
+      }
+
+      const timbreDetail = userText
+        ? `\nTARGET VOCAL CHARACTER / TIMBRE: "${userText}"`
+        : `\nTARGET VOCAL CHARACTER / TIMBRE: Natural, expressive, and genre-appropriate ${activeGender === 'duet' ? 'Male & Female Duet' : activeGender.toUpperCase()} vocal delivery`;
+
+      vocalReplacementInstruction = `\n\n[MANDATORY FEATURE — VOCAL CHARACTER REPLACEMENT]\nThe user has explicitly requested a VOCAL GENDER & CHARACTER REPLACEMENT for the cover track (Song B):\n${genderDirective}${timbreDetail}\n\nSTRICT CONDITIONAL EXECUTION RULES:\n1. IN "cover_description": Replace the original singer's vocal configuration and timbre with this target (${activeGender.toUpperCase()}${userText ? `: "${userText}"` : ''}). Seamlessly integrate this replacement vocal into the single cohesive cover description paragraph. DO NOT alter the original song's melody, lyrics, language, rhythm, tempo, instrumentation, chord progressions, arrangement builds, mood, or mix textures — ONLY replace the vocal configuration and character.\n2. IN "style": ABSOLUTELY DO NOT MODIFY STYLE TAGS BASED ON THIS VOCAL REPLACEMENT OR GENDER SELECTION. "style" MUST REMAIN 100% FAITHFUL TO THE ORIGINAL REFERENCE AUDIO'S MUSICAL DNA (original genre, original mood, original instrumentation, original tempo, original mix quality). STYLE MUST REMAIN STRICTLY INDEPENDENT FROM VOCAL CHARACTER REPLACEMENT.`;
+    }
 
     // 2. Custom Intro Arrangement Instruction (Toggle ON/OFF)
     const isCustomIntroEnabled = Boolean(customIntro && customIntro.enabled);
@@ -322,7 +341,8 @@ export class GeminiService {
       charCount,
       modelUsed: activeModel,
       wasOptimized,
-      replacementVocal: hasVocalReplacement ? replacementVocal!.trim() : undefined,
+      replacementVocal: hasVocalReplacement ? (replacementVocal?.trim() || undefined) : undefined,
+      vocalGender: hasVocalReplacement ? vocalGender : undefined,
       customIntro: isCustomIntroEnabled ? customIntro : undefined,
     };
   }
