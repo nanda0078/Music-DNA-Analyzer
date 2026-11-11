@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Clock, HardDrive, Disc, Activity, Layers } from 'lucide-react';
+import { FileText, Clock, HardDrive, Disc, Activity, Layers, Gauge } from 'lucide-react';
 import { AudioMetadata } from '../types';
 import { AudioProcessor } from '../services/audioProcessor';
 
@@ -23,7 +23,7 @@ export const AudioMetadataCard: React.FC<AudioMetadataCardProps> = ({ metadata }
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         
         {/* File Name */}
-        <div className="col-span-2 sm:col-span-3 lg:col-span-2 p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
+        <div className="col-span-2 sm:col-span-1 lg:col-span-1 p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
           <div className="text-[11px] text-slate-400 flex items-center space-x-1.5 mb-1">
             <Disc className="w-3.5 h-3.5 text-blue-400" />
             <span>Nama File</span>
@@ -34,7 +34,7 @@ export const AudioMetadataCard: React.FC<AudioMetadataCardProps> = ({ metadata }
         </div>
 
         {/* Duration */}
-        <div className="p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
+        <div className="col-span-1 sm:col-span-1 lg:col-span-1 p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
           <div className="text-[11px] text-slate-400 flex items-center space-x-1.5 mb-1">
             <Clock className="w-3.5 h-3.5 text-blue-400" />
             <span>Durasi</span>
@@ -45,7 +45,7 @@ export const AudioMetadataCard: React.FC<AudioMetadataCardProps> = ({ metadata }
         </div>
 
         {/* File Size */}
-        <div className="p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
+        <div className="col-span-1 sm:col-span-1 lg:col-span-1 p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
           <div className="text-[11px] text-slate-400 flex items-center space-x-1.5 mb-1">
             <HardDrive className="w-3.5 h-3.5 text-blue-400" />
             <span>Ukuran</span>
@@ -56,7 +56,7 @@ export const AudioMetadataCard: React.FC<AudioMetadataCardProps> = ({ metadata }
         </div>
 
         {/* Sample Rate */}
-        <div className="p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
+        <div className="col-span-1 sm:col-span-1 lg:col-span-1 p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
           <div className="text-[11px] text-slate-400 flex items-center space-x-1.5 mb-1">
             <Activity className="w-3.5 h-3.5 text-blue-400" />
             <span>Sample Rate</span>
@@ -67,7 +67,7 @@ export const AudioMetadataCard: React.FC<AudioMetadataCardProps> = ({ metadata }
         </div>
 
         {/* Channels */}
-        <div className="p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
+        <div className="col-span-1 sm:col-span-1 lg:col-span-1 p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
           <div className="text-[11px] text-slate-400 flex items-center space-x-1.5 mb-1">
             <Layers className="w-3.5 h-3.5 text-blue-400" />
             <span>Kanal</span>
@@ -75,6 +75,62 @@ export const AudioMetadataCard: React.FC<AudioMetadataCardProps> = ({ metadata }
           <p className="text-xs font-bold text-slate-200">
             {metadata.channels === 2 ? 'Stereo (2 Ch)' : metadata.channels === 1 ? 'Mono (1 Ch)' : 'N/A'}
           </p>
+        </div>
+
+        {/* BPM / TEMPO */}
+        <div className="col-span-2 sm:col-span-1 lg:col-span-1 p-3 bg-studio-950/60 rounded-xl border border-studio-800/80">
+          <div className="text-[11px] text-slate-400 flex items-center justify-between mb-1">
+            <div className="flex items-center space-x-1.5">
+              <Gauge className="w-3.5 h-3.5 text-blue-400" />
+              <span>BPM / TEMPO</span>
+            </div>
+            {metadata.bpmAnalysis?.status === 'detected' && metadata.bpmAnalysis.bpm > 0 && (
+              <span
+                className={`px-1.5 py-0.2 text-[9px] font-semibold rounded border ${
+                  metadata.bpmAnalysis.confidence === 'High'
+                    ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20'
+                    : metadata.bpmAnalysis.confidence === 'Medium'
+                    ? 'text-amber-300 bg-amber-500/10 border-amber-500/20'
+                    : 'text-slate-400 bg-slate-500/10 border-slate-500/20'
+                }`}
+                title={`Tingkat Kepercayaan: ${metadata.bpmAnalysis.confidence}`}
+              >
+                {metadata.bpmAnalysis.confidence}
+              </span>
+            )}
+          </div>
+
+          {metadata.bpmAnalysis?.status === 'analyzing' ? (
+            <div className="flex items-center space-x-1.5 py-0.5 text-xs text-blue-300 font-medium">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse inline-block" />
+              <span className="truncate">Menganalisis BPM...</span>
+            </div>
+          ) : metadata.bpmAnalysis?.status === 'detected' && metadata.bpmAnalysis.bpm > 0 ? (
+            <div>
+              <div className="flex items-baseline space-x-1.5">
+                <p className="text-xs font-mono font-bold text-blue-300">
+                  {metadata.bpmAnalysis.bpm} BPM
+                </p>
+                {metadata.bpmAnalysis.tempoCategory && (
+                  <span className="text-[10px] text-slate-400 font-medium truncate">
+                    ({metadata.bpmAnalysis.tempoCategory})
+                  </span>
+                )}
+              </div>
+              <p
+                className="text-[10px] text-slate-400 mt-0.5 truncate"
+                title={`Half-Time: ${metadata.bpmAnalysis.halfTimeBpm} BPM | Double-Time: ${metadata.bpmAnalysis.doubleTimeBpm} BPM`}
+              >
+                ½: <span className="text-slate-300 font-mono font-medium">{metadata.bpmAnalysis.halfTimeBpm}</span>
+                <span className="mx-1 text-slate-600">•</span>
+                2×: <span className="text-slate-300 font-mono font-medium">{metadata.bpmAnalysis.doubleTimeBpm}</span>
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs font-semibold text-rose-300/80 truncate py-0.5" title="Tempo tidak terdeteksi otomatis">
+              BPM Tidak Terdeteksi
+            </p>
+          )}
         </div>
 
       </div>

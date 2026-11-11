@@ -85,14 +85,55 @@ export const App: React.FC = () => {
       });
 
       const analysis = await AudioProcessor.analyzeAudioFile(file);
+
+      // Initialize with analyzing status so UI immediately displays "Menganalisis BPM..."
+      const initialMetadata: AudioMetadata = {
+        ...analysis.metadata,
+        bpmAnalysis: {
+          bpm: 0,
+          confidence: 'Medium',
+          halfTimeBpm: 0,
+          doubleTimeBpm: 0,
+          status: 'analyzing'
+        }
+      };
+
       setAudioFile(file);
-      setAudioMetadata(analysis.metadata);
+      setAudioMetadata(initialMetadata);
       setWaveformPeaks(analysis.waveformPeaks);
       setBase64Audio(analysis.base64Data);
 
       setProgress({ status: 'idle', percentage: 0, message: '' });
       // Reset previous results if any
       setCurrentResult(null);
+
+      // Asynchronously run beat tracking & tempo estimation across the whole audio track
+      AudioProcessor.detectBpm(analysis.audioBuffer)
+        .then((bpmResult) => {
+          setAudioMetadata(prev => {
+            if (!prev || prev.fileName !== file.name) return prev;
+            return {
+              ...prev,
+              bpmAnalysis: bpmResult
+            };
+          });
+        })
+        .catch((err) => {
+          console.warn('BPM detection warning:', err);
+          setAudioMetadata(prev => {
+            if (!prev || prev.fileName !== file.name) return prev;
+            return {
+              ...prev,
+              bpmAnalysis: {
+                bpm: 0,
+                confidence: 'Low',
+                halfTimeBpm: 0,
+                doubleTimeBpm: 0,
+                status: 'failed'
+              }
+            };
+          });
+        });
     } catch (err: unknown) {
       console.error('Audio decoding error', err);
       const errorMsg = err instanceof Error ? err.message : 'Gagal membaca dan mendekode file audio.';
@@ -159,6 +200,7 @@ export const App: React.FC = () => {
           fileName: audioMetadata.fileName,
           fileSize: audioMetadata.fileSize,
           duration: audioMetadata.duration,
+          bpmAnalysis: audioMetadata.bpmAnalysis,
         },
         (stepMessage, pct) => {
           setProgress(prev => ({
@@ -174,9 +216,14 @@ export const App: React.FC = () => {
         effectiveGender
       );
 
-      setCurrentResult(result);
+      const finalResultWithBpm: AnalysisResult = {
+        ...result,
+        bpmAnalysis: audioMetadata.bpmAnalysis,
+      };
+
+      setCurrentResult(finalResultWithBpm);
       // Save result to history
-      HistoryService.saveResult(result);
+      HistoryService.saveResult(finalResultWithBpm);
       refreshHistory();
 
       setProgress({

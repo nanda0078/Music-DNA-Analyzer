@@ -251,6 +251,90 @@ currentGender = 'female';
 assert.strictEqual(currentText, 'High-energy rock vocal', 'Description text must not be wiped when switching gender');
 console.log('✓ 6. Switching Gender preserves custom description text intact.');
 
+// TEST 16: Automatic Song BPM Detection (Beat Tracking & Tempo Estimation)
+console.log('\n[TEST 16] Testing Automatic Song BPM Detection, Half-Time, Double-Time & Confidence:');
+function generateSyntheticRhythmTrack(targetBpm, durationSec = 15, sampleRate = 44100) {
+  const totalSamples = durationSec * sampleRate;
+  const channelData = new Float32Array(totalSamples);
+  const beatInterval = 60 / targetBpm;
+  const beatSamples = Math.floor(beatInterval * sampleRate);
+
+  for (let sample = 0; sample < totalSamples; sample++) {
+    const t = sample / sampleRate;
+    const beatIndex = Math.floor(sample / beatSamples);
+    const posInBeat = sample % beatSamples;
+    const timeInBeat = posInBeat / sampleRate;
+
+    let val = 0;
+    const measureBeat = beatIndex % 4;
+
+    // Kick on 1 and 3
+    if ((measureBeat === 0 || measureBeat === 2) && timeInBeat < 0.12) {
+      const freq = 130 * Math.exp(-timeInBeat * 35) + 50;
+      val += Math.sin(2 * Math.PI * freq * timeInBeat) * Math.exp(-timeInBeat * 18) * 0.9;
+    }
+
+    // Snare on 2 and 4
+    if ((measureBeat === 1 || measureBeat === 3) && timeInBeat < 0.15) {
+      val += Math.sin(2 * Math.PI * 190 * timeInBeat) * Math.exp(-timeInBeat * 22) * 0.6;
+      val += (Math.random() * 2 - 1) * Math.exp(-timeInBeat * 28) * 0.45;
+    }
+
+    // Hihat on 8th notes
+    const eighthSamples = Math.floor(beatSamples / 2);
+    const timeInEighth = (sample % eighthSamples) / sampleRate;
+    if (timeInEighth < 0.04) {
+      val += (Math.random() * 2 - 1) * Math.exp(-timeInEighth * 90) * 0.15;
+    }
+
+    // Soft instrumental chord
+    val += Math.sin(2 * Math.PI * 220 * t) * 0.05;
+    channelData[sample] = val;
+  }
+  return { channelData, sampleRate };
+}
+
+// Test target BPMs: 75, 90, 105, 120
+const bpmTargets = [75, 90, 105, 120];
+for (const target of bpmTargets) {
+  const { channelData, sampleRate } = generateSyntheticRhythmTrack(target);
+  const result = AudioProcessor.calculateBpmFromChannelData(channelData, sampleRate);
+  
+  assert.strictEqual(result.status, 'detected', `BPM status should be detected for ${target} BPM`);
+  assert(Math.abs(result.bpm - target) <= 1, `BPM expected ${target} but got ${result.bpm}`);
+  assert.strictEqual(result.halfTimeBpm, Math.round(result.bpm / 2), 'Half-Time BPM calculation mismatch');
+  assert.strictEqual(result.doubleTimeBpm, Math.round(result.bpm * 2), 'Double-Time BPM calculation mismatch');
+  assert(['High', 'Medium', 'Low'].includes(result.confidence), 'Confidence must be High, Medium, or Low');
+  assert.strictEqual(result.confidence, 'High', `Synthetic clean track for ${target} BPM must yield High confidence`);
+  
+  console.log(`✓ Target ${target} BPM -> Detected: ${result.bpm} BPM (${result.tempoCategory}), Half: ${result.halfTimeBpm}, Double: ${result.doubleTimeBpm}, Confidence: ${result.confidence}`);
+}
+
+// TEST 17: BPM Error Handling & Graceful Degradation
+console.log('\n[TEST 17] Testing BPM Error Handling on Silent or Malformed Audio:');
+const silentData = new Float32Array(44100 * 5); // 5 seconds of silence
+const silentResult = AudioProcessor.calculateBpmFromChannelData(silentData, 44100);
+assert.strictEqual(silentResult.status, 'failed', 'Silence must gracefully report status "failed"');
+assert.strictEqual(silentResult.bpm, 0, 'Silent audio BPM must be 0');
+console.log('✓ Silence yields status "failed" (BPM Tidak Terdeteksi) gracefully.');
+
+// Too short audio (< 80 frames)
+const shortData = new Float32Array(44100 * 0.5); // 0.5s audio
+const shortResult = AudioProcessor.calculateBpmFromChannelData(shortData, 44100);
+assert.strictEqual(shortResult.status, 'failed');
+console.log('✓ Ultra-short audio (<0.8s) returns status "failed" safely.');
+
+// TEST 18: Tempo Category Utility
+console.log('\n[TEST 18] Testing Classical / Standard Tempo Classification:');
+assert.strictEqual(AudioProcessor.getTempoCategory(50), 'Largo');
+assert.strictEqual(AudioProcessor.getTempoCategory(70), 'Adagio');
+assert.strictEqual(AudioProcessor.getTempoCategory(90), 'Andante');
+assert.strictEqual(AudioProcessor.getTempoCategory(120), 'Moderato');
+assert.strictEqual(AudioProcessor.getTempoCategory(140), 'Allegro');
+assert.strictEqual(AudioProcessor.getTempoCategory(165), 'Vivace');
+assert.strictEqual(AudioProcessor.getTempoCategory(185), 'Presto');
+console.log('✓ Tempo categories correctly mapped across all BPM ranges.');
+
 console.log('\n======================================================');
-console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (15/15)!');
+console.log('ALL QA SUITE UNIT & ACCEPTANCE TESTS PASSED (18/18)!');
 console.log('======================================================');

@@ -1,4 +1,4 @@
-import { ApiSettings, AnalysisResult, CustomIntroConfig, VocalGender } from '../types';
+import { ApiSettings, AnalysisResult, CustomIntroConfig, VocalGender, BpmAnalysis } from '../types';
 import { 
   DEFAULT_SETTINGS, 
   MAX_COVER_DESCRIPTION_CHARS, 
@@ -124,7 +124,7 @@ export class GeminiService {
   public static async analyzeAudio(
     base64Audio: string,
     mimeType: string,
-    fileMeta: { fileName: string; fileSize: number; duration: number },
+    fileMeta: { fileName: string; fileSize: number; duration: number; bpmAnalysis?: BpmAnalysis },
     onProgress?: (step: string, percentage: number) => void,
     replacementVocal?: string,
     customIntro?: CustomIntroConfig,
@@ -183,13 +183,17 @@ export class GeminiService {
 
     onProgress?.('Mengirim audio referensi ke Gemini AI...', 30);
 
+    const bpmInfo = fileMeta.bpmAnalysis && fileMeta.bpmAnalysis.status === 'detected' && fileMeta.bpmAnalysis.bpm > 0
+      ? `\nDetected BPM: ${fileMeta.bpmAnalysis.bpm} BPM (Confidence: ${fileMeta.bpmAnalysis.confidence}, Half-time: ${fileMeta.bpmAnalysis.halfTimeBpm} BPM, Double-time: ${fileMeta.bpmAnalysis.doubleTimeBpm} BPM${fileMeta.bpmAnalysis.tempoCategory ? `, Tempo: ${fileMeta.bpmAnalysis.tempoCategory}` : ''})`
+      : '';
+
     const requestBody = {
       contents: [
         {
           role: 'user',
           parts: [
             {
-              text: `${SYSTEM_ANALYSIS_INSTRUCTION}${vocalReplacementInstruction}${customIntroInstruction}\n\n[FILE METADATA]\nFilename: ${fileMeta.fileName}\nDuration: ${Math.round(fileMeta.duration)} seconds\nMIME: ${mimeType}\n\nBegin deep audio listening and output the JSON blueprint now:`
+              text: `${SYSTEM_ANALYSIS_INSTRUCTION}${vocalReplacementInstruction}${customIntroInstruction}\n\n[FILE METADATA]\nFilename: ${fileMeta.fileName}\nDuration: ${Math.round(fileMeta.duration)} seconds\nMIME: ${mimeType}${bpmInfo}\n\nBegin deep audio listening and output the JSON blueprint now:`
             },
             {
               inlineData: {
@@ -344,6 +348,7 @@ export class GeminiService {
       replacementVocal: hasVocalReplacement ? (replacementVocal?.trim() || undefined) : undefined,
       vocalGender: hasVocalReplacement ? vocalGender : undefined,
       customIntro: isCustomIntroEnabled ? customIntro : undefined,
+      bpmAnalysis: fileMeta.bpmAnalysis,
     };
   }
 

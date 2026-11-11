@@ -1,4 +1,4 @@
-import { ApiSettings, AnalysisResult, CustomIntroConfig, VocalGender } from '../types';
+import { ApiSettings, AnalysisResult, CustomIntroConfig, VocalGender, BpmAnalysis } from '../types';
 import { 
   MAX_COVER_DESCRIPTION_CHARS, 
   SYSTEM_ANALYSIS_INSTRUCTION, 
@@ -164,7 +164,7 @@ export class CrowllmService {
   public static async analyzeAudio(
     base64Audio: string,
     mimeType: string,
-    fileMeta: { fileName: string; fileSize: number; duration: number },
+    fileMeta: { fileName: string; fileSize: number; duration: number; bpmAnalysis?: BpmAnalysis },
     onProgress?: (step: string, percentage: number) => void,
     replacementVocal?: string,
     customIntro?: CustomIntroConfig,
@@ -224,11 +224,15 @@ export class CrowllmService {
 
     const systemPrompt = `${SYSTEM_ANALYSIS_INSTRUCTION}${vocalReplacementInstruction}${customIntroInstruction}\n\n[OUTPUT REQUIREMENT]\nRespond strictly with a single JSON object containing exactly two keys: "cover_description" and "style".`;
 
+    const bpmInfo = fileMeta.bpmAnalysis && fileMeta.bpmAnalysis.status === 'detected' && fileMeta.bpmAnalysis.bpm > 0
+      ? `\n- Detected BPM: ${fileMeta.bpmAnalysis.bpm} BPM (${fileMeta.bpmAnalysis.confidence} Confidence, Half-time: ${fileMeta.bpmAnalysis.halfTimeBpm} BPM, Double-time: ${fileMeta.bpmAnalysis.doubleTimeBpm} BPM${fileMeta.bpmAnalysis.tempoCategory ? `, Tempo: ${fileMeta.bpmAnalysis.tempoCategory}` : ''})`
+      : '';
+
     const userTextPrompt = `[REFERENCE AUDIO INTELLIGENCE & METADATA]
 - Track / Filename: ${fileMeta.fileName}
 - Duration: ${Math.round(fileMeta.duration)} seconds (${Math.floor(fileMeta.duration / 60)}:${String(Math.floor(fileMeta.duration % 60)).padStart(2, '0')})
 - Audio Format: ${mimeType}
-- File Size: ${Math.round(fileMeta.fileSize / 1024)} KB
+- File Size: ${Math.round(fileMeta.fileSize / 1024)} KB${bpmInfo}
 
 [INSTRUCTION]
 Perform a comprehensive 9-dimensional Musical Intelligence analysis for this reference track and produce the exact cover blueprint for Song B.
@@ -389,6 +393,7 @@ Output strictly a JSON object with keys "cover_description" and "style".`;
       replacementVocal: hasVocalReplacement ? (replacementVocal?.trim() || undefined) : undefined,
       vocalGender: hasVocalReplacement ? vocalGender : undefined,
       customIntro: isCustomIntroEnabled ? customIntro : undefined,
+      bpmAnalysis: fileMeta.bpmAnalysis,
     };
   }
 

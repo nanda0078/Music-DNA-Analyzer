@@ -1,3 +1,16 @@
+export type BpmConfidence = 'High' | 'Medium' | 'Low';
+export type BpmStatus = 'idle' | 'analyzing' | 'detected' | 'failed';
+
+export interface BpmAnalysis {
+  bpm: number; // e.g. 120, 75, 90, 105
+  confidence: BpmConfidence; // High | Medium | Low
+  halfTimeBpm: number; // e.g. 60
+  doubleTimeBpm: number; // e.g. 240
+  tempoCategory?: string; // e.g. 'Moderato', 'Allegro', 'Andante'
+  status: BpmStatus;
+  rawBpm?: number;
+}
+
 export interface AudioMetadata {
   fileName: string;
   fileSize: number; // in bytes
@@ -6,6 +19,7 @@ export interface AudioMetadata {
   sampleRate?: number;
   channels?: number;
   dataUrl?: string; // for HTML5 audio element
+  bpmAnalysis?: BpmAnalysis;
 }
 
 export interface CustomIntroConfig {
@@ -33,6 +47,7 @@ export interface AnalysisResult {
   replacementVocal?: string;
   vocalGender?: VocalGender;
   customIntro?: CustomIntroConfig;
+  bpmAnalysis?: BpmAnalysis;
 }
 
 export type ApiProvider = 'gemini' | 'crowllm';

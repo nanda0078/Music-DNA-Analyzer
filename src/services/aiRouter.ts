@@ -1,4 +1,4 @@
-import { ApiSettings, AnalysisResult, CustomIntroConfig, ApiProvider, VocalGender } from '../types';
+import { ApiSettings, AnalysisResult, CustomIntroConfig, ApiProvider, VocalGender, BpmAnalysis } from '../types';
 import { GeminiService } from './geminiService';
 import { CrowllmService } from './crowllmService';
 
@@ -60,7 +60,7 @@ export class AiRouter {
   public static async analyzeAudio(
     base64Audio: string,
     mimeType: string,
-    fileMeta: { fileName: string; fileSize: number; duration: number },
+    fileMeta: { fileName: string; fileSize: number; duration: number; bpmAnalysis?: BpmAnalysis },
     onProgress?: (step: string, percentage: number) => void,
     replacementVocal?: string,
     customIntro?: CustomIntroConfig,
